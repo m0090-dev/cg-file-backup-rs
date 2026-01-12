@@ -42,8 +42,8 @@
       "icons/icon.ico"
     ],
     "externalBin": [
-      "../hdiff-bin/hdiffz",
-      "../hdiff-bin/hpatchz"
+      "binaries/hdiffz",
+      "binaries/hpatchz"
     ],
    "windows": {
       "nsis": {
