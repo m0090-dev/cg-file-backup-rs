@@ -3,7 +3,7 @@ use crate::app::state::AppState;
 use crate::app::types::AppConfig;
 use tauri::State;
 use tauri::{
-    menu::{CheckMenuItemBuilder, Menu, MenuBuilder, MenuItemBuilder, SubmenuBuilder},
+    menu::{CheckMenuItemBuilder, Menu, MenuBuilder, MenuItem, MenuItemBuilder, SubmenuBuilder},
     AppHandle, Manager, Runtime,
 };
 
@@ -36,16 +36,30 @@ pub fn setup_menu<R: Runtime>(app: &AppHandle<R>, config: &AppConfig) -> tauri::
         .checked(false) // Go版と同様に初期値は false
         .build(app)?;
 
-    let lang_en = CheckMenuItemBuilder::with_id("lang_en", t("english")).checked(config.language == "en").build(app)?;
-    let lang_ja = CheckMenuItemBuilder::with_id("lang_ja", t("japanese")).checked(config.language == "ja").build(app)?;
-
-    let quit = MenuItemBuilder::with_id("quit", t("quit"))
-        .accelerator("CmdOrCtrl+Q")
+    let lang_en = CheckMenuItemBuilder::with_id("lang_en", t("english"))
+        .checked(config.language == "en")
+        .build(app)?;
+    let lang_ja = CheckMenuItemBuilder::with_id("lang_ja", t("japanese"))
+        .checked(config.language == "ja")
         .build(app)?;
 
-    let about = MenuItemBuilder::with_id("about", t("about"))
-        .accelerator("CmdOrCtrl+A")
-        .build(app)?;
+    // quit の作成
+    let quit = MenuItem::with_id(
+        app,
+        "quit",         // id
+        t("quit"),      // text
+        true,           // enabled
+        Some("Ctrl+Q"), // accelerator (Option型なので Some で囲む)
+    )?;
+
+    // about の作成
+    let about = MenuItem::with_id(
+        app,
+        "about",        // id
+        t("about"),     // text
+        true,           // enabled
+        Some("Ctrl+A"), // accelerator
+    )?;
 
     // --- サブメニューの組み立て ---
 

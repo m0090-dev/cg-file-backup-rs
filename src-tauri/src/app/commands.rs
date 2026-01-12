@@ -116,10 +116,10 @@ pub async fn backup_or_diff(
     algo: String,
     compress: String,
 ) -> Result<(), String> {
-    use std::path::{Path, PathBuf};
-    use std::fs;
-    use tauri::Manager;
     use crate::app::state::AppState;
+    use std::fs;
+    use std::path::{Path, PathBuf};
+    use tauri::Manager;
 
     // --- 1. ディレクトリの決定 (Go版の root 変数に相当) ---
     // ここでの project_root は、常に baseN フォルダが作られる「親」を指すようにします。
@@ -133,21 +133,28 @@ pub async fn backup_or_diff(
     let mut current_idx: i32 = 0;
     let project_root: PathBuf;
 
-    let folder_name = initial_path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+    let folder_name = initial_path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("");
 
     if folder_name.starts_with("base") {
         // A. 特定の世代フォルダ (.../baseN) が直接指定されている場合
         target_dir = initial_path.clone();
         project_root = initial_path.parent().unwrap_or(&initial_path).to_path_buf();
-        
+
         // 正規表現でインデックス抽出 (Go版: Sscanf(baseFolder, "base%d", &currentIdx))
-        if let Some(idx_str) = folder_name.strip_prefix("base").and_then(|s| s.split('_').next()) {
+        if let Some(idx_str) = folder_name
+            .strip_prefix("base")
+            .and_then(|s| s.split('_').next())
+        {
             current_idx = idx_str.parse().unwrap_or(0);
         }
     } else {
         // B. 親フォルダが指定されている場合 (Go版: a.ResolveGenerationDir)
         project_root = initial_path.clone();
-        let (resolved_path, idx) = auto_generation::resolve_generation_dir(&project_root, &work_file)?;
+        let (resolved_path, idx) =
+            auto_generation::resolve_generation_dir(&project_root, &work_file)?;
         target_dir = resolved_path;
         current_idx = idx;
     }
@@ -157,7 +164,8 @@ pub async fn backup_or_diff(
         fs::create_dir_all(&target_dir).map_err(|e| e.to_string())?;
     }
 
-    let file_name = Path::new(&work_file).file_name()
+    let file_name = Path::new(&work_file)
+        .file_name()
         .ok_or("Invalid work file name")?
         .to_string_lossy();
     let base_full = target_dir.join(format!("{}.base", file_name));
@@ -180,7 +188,8 @@ pub async fn backup_or_diff(
             &work_file,
             &temp_diff.to_string_lossy(),
             &compress,
-        ).await?;
+        )
+        .await?;
     }
 
     // --- 3. サイズ・閾値判定 ---
@@ -195,7 +204,8 @@ pub async fn backup_or_diff(
     };
 
     let mut should_next_gen = false;
-    if work_size > 100 * 1024 { // 100KB超
+    if work_size > 100 * 1024 {
+        // 100KB超
         if (diff_size as f64) > (work_size as f64) * threshold {
             should_next_gen = true;
         }
@@ -207,8 +217,9 @@ pub async fn backup_or_diff(
         let new_idx = current_idx + 1;
 
         // project_root（親）に対して新しい baseN を作る
-        let new_gen_dir = auto_generation::create_new_generation(&project_root, new_idx, &work_file)?;
-        
+        let new_gen_dir =
+            auto_generation::create_new_generation(&project_root, new_idx, &work_file)?;
+
         let new_base_full = new_gen_dir.join(format!("{}.base", file_name));
         let final_path = new_gen_dir.join(format!("{}.{}.{}.diff", file_name, ts, algo));
 
@@ -219,11 +230,13 @@ pub async fn backup_or_diff(
             &work_file,
             &final_path.to_string_lossy(),
             &compress,
-        ).await
+        )
+        .await
     } else {
         // --- 4b. 【正常】 移動して確定 ---
         let final_path = target_dir.join(format!("{}.{}.{}.diff", file_name, ts, algo));
-        fs::rename(&temp_diff, &final_path).map_err(|e| format!("Failed to finalize diff: {}", e))?;
+        fs::rename(&temp_diff, &final_path)
+            .map_err(|e| format!("Failed to finalize diff: {}", e))?;
         Ok(())
     }
 }

@@ -1,3 +1,6 @@
+use crate::app::commands::get_language_text;
+use crate::app::state::AppState;
+use crate::app::types::AppConfig;
 use chrono::Local;
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
@@ -277,4 +280,42 @@ pub fn apply_window_visibility(app: AppHandle, show: bool) -> Result<(), String>
         return Err("Main window not found".into());
     }
     Ok(())
+}
+
+// 共通化：トレイメニューだけを生成するヘルパー関数
+pub fn create_tray_menu<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    config: &AppConfig,
+) -> tauri::Result<tauri::menu::Menu<R>> {
+    let state = app.state::<AppState>();
+    let t = |key: &str| get_language_text(state.clone(), key).unwrap_or_else(|_| key.to_string());
+
+    let mode_full = tauri::menu::CheckMenuItemBuilder::with_id("mode_full", t("modeFull"))
+        .checked(config.tray_backup_mode == "full")
+        .build(app)?;
+    let mode_arc = tauri::menu::CheckMenuItemBuilder::with_id("mode_arc", t("modeArc"))
+        .checked(config.tray_backup_mode == "arc")
+        .build(app)?;
+    let mode_diff = tauri::menu::CheckMenuItemBuilder::with_id("mode_diff", t("modeDiff"))
+        .checked(config.tray_backup_mode == "diff")
+        .build(app)?;
+    let backup_mode_menu = tauri::menu::SubmenuBuilder::new(app, t("backupMode"))
+        .item(&mode_full)
+        .item(&mode_arc)
+        .item(&mode_diff)
+        .build()?;
+
+    tauri::menu::MenuBuilder::new(app)
+        .item(&tauri::menu::MenuItemBuilder::with_id("show_window", t("showWindow")).build(app)?)
+        .separator()
+        .item(&backup_mode_menu)
+        .item(&tauri::menu::MenuItemBuilder::with_id("execute", t("executeBtn")).build(app)?)
+        .item(&tauri::menu::MenuItemBuilder::with_id("change_work", t("workFileBtn")).build(app)?)
+        .item(
+            &tauri::menu::MenuItemBuilder::with_id("change_backup", t("backupDirBtn"))
+                .build(app)?,
+        )
+        .separator()
+        .item(&tauri::menu::MenuItemBuilder::with_id("quit", t("quit")).build(app)?)
+        .build()
 }

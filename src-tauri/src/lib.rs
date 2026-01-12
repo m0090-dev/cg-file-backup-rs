@@ -4,18 +4,21 @@ use crate::app::config::*;
 use crate::app::state::AppState;
 use crate::app::types::AppConfig;
 use crate::app::utils;
+use crate::utils::create_tray_menu;
 use app::menu::*;
 use app::tray::*;
 use std::fs;
 use std::sync::Mutex;
 use tauri::AppHandle;
-use tauri::{menu::{MenuEvent}, Emitter, Manager};
+use tauri::{menu::MenuEvent, Emitter, Manager};
 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
+use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut,ShortcutState};
 use tauri_plugin_notification::NotificationExt;
 
 pub fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
     let state = app.state::<AppState>();
     let id = event.id.as_ref();
+    println!("--- Menu Event: '{}' ---", id);
 
     match id {
         // --- 1. バックアップモード切替 (フル / アーカイブ / 差分) ---
@@ -152,70 +155,44 @@ pub fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) 
         "quit" => {
             app.exit(0);
         }
-        
+
         "lang_en" | "lang_ja" => {
-    let lang_code = if id == "lang_en" { "en" } else { "ja" };
+            let lang_code = if id == "lang_en" { "en" } else { "ja" };
 
-    // 1. まずConfigを更新・保存（重要：setup_menuがこの値を見るため）
-    let config = {
-        let mut cfg = state.config.lock().unwrap();
-        cfg.language = lang_code.to_string();
-        cfg.clone()
-    };
-    let _ = state.save();
+            // 1. まずConfigを更新・保存（重要：setup_menuがこの値を見るため）
+            let config = {
+                let mut cfg = state.config.lock().unwrap();
+                cfg.language = lang_code.to_string();
+                cfg.clone()
+            };
+            let _ = state.save();
 
-    // 2. メニュー全体を再生成してセットし直す（これで確実に見た目が直る）
-    if let Ok(new_menu) = setup_menu(app, &config) {
-        let _ = app.set_menu(new_menu);
-    }
+            // 2. メニュー全体を再生成してセットし直す（これで確実に見た目が直る）
+            if let Ok(new_menu) = setup_menu(app, &config) {
+                let _ = app.set_menu(new_menu);
+            }
 
-    // 3. 通知
-    let t = |key: &str| -> String {
-        get_language_text(state.clone(), key).unwrap_or_else(|_| key.to_string())
-    };
-    let _ = app.dialog().message(&t("restartRequired")).show(|_| {});
-}
-   
+            // 3. 通知
+            let t = |key: &str| -> String {
+                get_language_text(state.clone(), key).unwrap_or_else(|_| key.to_string())
+            };
+            let _ = app.dialog().message(&t("restartRequired")).show(|_| {});
+        }
+        // --- 6. About ダイアログ ---
+        "about" => {
+            let t = |key: &str| -> String {
+                get_language_text(state.clone(), key).unwrap_or_else(|_| key.to_string())
+            };
+
+            // 指定通り、title は about、message は aboutText の i18n テキストのみを表示
+            app.dialog()
+                .message(t("aboutText"))
+                .title(t("about"))
+                .show(|_| {});
+        }
+
         _ => {}
     }
-}
-
-// 共通化：トレイメニューだけを生成するヘルパー関数
-fn create_tray_menu<R: tauri::Runtime>(
-    app: &tauri::AppHandle<R>,
-    config: &AppConfig,
-) -> tauri::Result<tauri::menu::Menu<R>> {
-    let state = app.state::<AppState>();
-    let t = |key: &str| get_language_text(state.clone(), key).unwrap_or_else(|_| key.to_string());
-
-    let mode_full = tauri::menu::CheckMenuItemBuilder::with_id("mode_full", t("modeFull"))
-        .checked(config.tray_backup_mode == "full")
-        .build(app)?;
-    let mode_arc = tauri::menu::CheckMenuItemBuilder::with_id("mode_arc", t("modeArc"))
-        .checked(config.tray_backup_mode == "arc")
-        .build(app)?;
-    let mode_diff = tauri::menu::CheckMenuItemBuilder::with_id("mode_diff", t("modeDiff"))
-        .checked(config.tray_backup_mode == "diff")
-        .build(app)?;
-    let backup_mode_menu = tauri::menu::SubmenuBuilder::new(app, t("backupMode"))
-        .item(&mode_full)
-        .item(&mode_arc)
-        .item(&mode_diff)
-        .build()?;
-
-    tauri::menu::MenuBuilder::new(app)
-        .item(&tauri::menu::MenuItemBuilder::with_id("show_window", t("showWindow")).build(app)?)
-        .separator()
-        .item(&backup_mode_menu)
-        .item(&tauri::menu::MenuItemBuilder::with_id("execute", t("executeBtn")).build(app)?)
-        .item(&tauri::menu::MenuItemBuilder::with_id("change_work", t("workFileBtn")).build(app)?)
-        .item(
-            &tauri::menu::MenuItemBuilder::with_id("change_backup", t("backupDirBtn"))
-                .build(app)?,
-        )
-        .separator()
-        .item(&tauri::menu::MenuItemBuilder::with_id("quit", t("quit")).build(app)?)
-        .build()
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -257,6 +234,9 @@ pub fn run() {
             let menu = setup_menu(app.handle(), &config)?;
             let _tray = setup_tray(app.handle(), &config);
             app.set_menu(menu.clone())?;
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.set_focus();
+            }
 
             // --- 起動時の完全同期ロジック ---
             let tray_enabled = config.tray_mode;
@@ -281,6 +261,46 @@ pub fn run() {
                 handle_menu_event(app_handle, event);
             });
 
+            #[cfg(desktop)]
+            {
+                // 1. ショートカットの定義
+                let quit_shortcut = Shortcut::new(Some(Modifiers::CONTROL), Code::KeyQ);
+                let about_shortcut = Shortcut::new(Some(Modifiers::CONTROL), Code::KeyA);
+
+                // 2. プラグインをハンドラ付きで登録
+                app.handle().plugin(
+                    tauri_plugin_global_shortcut::Builder::new()
+                        .with_handler(move |app_handle, shortcut, event| {
+                            if event.state() == ShortcutState::Pressed {
+                                if shortcut == &quit_shortcut {
+                                    app_handle.exit(0);
+                                } else if shortcut == &about_shortcut {
+                                    // app_handle から現在の State を取得
+                                    let state = app_handle.state::<AppState>();
+
+                                    // get_language_text に State をそのまま渡すためのクロージャ
+                                    let t = |key: &str| -> String {
+                                        // inner() を呼ばず、state.clone() で State 型のまま渡す
+                                        get_language_text(state.clone(), key)
+                                            .unwrap_or_else(|_| key.to_string())
+                                    };
+
+                                    // ダイアログ表示
+                                    let _ = app_handle
+                                        .dialog()
+                                        .message(t("aboutText"))
+                                        .title(t("about"))
+                                        .show(|_| {});
+                                }
+                            }
+                        })
+                        .build(),
+                )?;
+
+                // 3. ショートカットを OS に登録
+                app.global_shortcut().register(quit_shortcut)?;
+                app.global_shortcut().register(about_shortcut)?;
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
