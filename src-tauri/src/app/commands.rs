@@ -21,6 +21,8 @@ use std::collections::HashMap;
 use std::fs::File;
 use tar::Archive;
 use zip::ZipArchive;
+ use regex::Regex;
+
 
 #[tauri::command]
 pub fn get_config(state: State<'_, AppState>) -> Result<AppConfig, String> {
@@ -144,12 +146,25 @@ pub async fn backup_or_diff(
         project_root = initial_path.parent().unwrap_or(&initial_path).to_path_buf();
 
         // 正規表現でインデックス抽出 (Go版: Sscanf(baseFolder, "base%d", &currentIdx))
+        /*
         if let Some(idx_str) = folder_name
             .strip_prefix("base")
             .and_then(|s| s.split('_').next())
         {
             current_idx = idx_str.parse().unwrap_or(0);
         }
+        */
+        // --- 修正後（これに差し替えてください） ---
+        if folder_name.starts_with("base") {
+         // どんな形式 (base1, base1_timestamp, base01) でも最初の数字を引っこ抜く
+         let re_idx = Regex::new(r"base(\d+)").unwrap();
+         if let Some(caps) = re_idx.captures(folder_name) {
+           current_idx = caps[1].parse().unwrap_or(0);
+         }
+        }
+
+
+
     } else {
         // B. 親フォルダが指定されている場合 (Go版: a.ResolveGenerationDir)
         project_root = initial_path.clone();
