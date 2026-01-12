@@ -18,7 +18,7 @@ use tauri_plugin_notification::NotificationExt;
 pub fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
     let state = app.state::<AppState>();
     let id = event.id.as_ref();
-    println!("--- Menu Event: '{}' ---", id);
+    //println!("--- Menu Event: '{}' ---", id);
 
     match id {
         // --- 1. バックアップモード切替 (フル / アーカイブ / 差分) ---

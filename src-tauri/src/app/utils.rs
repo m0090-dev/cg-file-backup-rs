@@ -291,10 +291,10 @@ pub fn create_tray_menu<R: tauri::Runtime>(
     let t = |key: &str| get_language_text(state.clone(), key).unwrap_or_else(|_| key.to_string());
 
     let mode_full = tauri::menu::CheckMenuItemBuilder::with_id("mode_full", t("modeFull"))
-        .checked(config.tray_backup_mode == "full")
+        .checked(config.tray_backup_mode == "copy")
         .build(app)?;
     let mode_arc = tauri::menu::CheckMenuItemBuilder::with_id("mode_arc", t("modeArc"))
-        .checked(config.tray_backup_mode == "arc")
+        .checked(config.tray_backup_mode == "archive")
         .build(app)?;
     let mode_diff = tauri::menu::CheckMenuItemBuilder::with_id("mode_diff", t("modeDiff"))
         .checked(config.tray_backup_mode == "diff")
