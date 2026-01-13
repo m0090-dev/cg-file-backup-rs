@@ -1,0 +1,25 @@
+accepted = [
+    "MIT", 
+    "Apache-2.0", 
+    "BSD-2-Clause", 
+    "BSD-3-Clause", 
+    "ISC", 
+    "Unicode-3.0", 
+    "Zlib", 
+    "MPL-2.0", 
+    "0BSD", 
+    "LGPL-2.1-or-later",
+    "CC0-1.0",                        # 追加: ppmd-rust 用
+    "bzip2-1.0.6",                    # 追加: libbz2-rs-sys 用
+    "Apache-2.0 WITH LLVM-exception"  # 追加: target-lexicon 用
+]
+
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "x86_64-pc-windows-msvc"
+]
+
+[r-efi.clarify]
+license = "MIT OR Apache-2.0 OR LGPL-2.1-or-later"
+
+
