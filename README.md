@@ -47,7 +47,9 @@ If you are using the pre-compiled version, please note:
 - **External Dependencies**: This tool includes `hdiff-bin` and `bzip2-bin` to handle differential backups and compression. Do not delete these directories, as they are essential for the tool's core functionality.
 - **Licenses**: This software uses several open-source libraries. You can find the list of used libraries in `CREDITS.md` and their full license texts in the `licenses/` directory.
 
-## ⚖️ License
 
-This project is licensed under the MIT License - see the `LICENSE` file for details.
-Copyright (c) 2024 m0090-dev
+## License
+
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+Copyright (c) 2024-2026 m0090-dev
+For a complete list of third-party licenses and credits, please refer to [CREDITS.md](CREDITS.md).
