@@ -182,6 +182,9 @@ function setupDragAndDrop() {
 
         tab.workFileSize = await GetFileSize(droppedPath);
 
+	tab.backupDir = ""; 
+	tab.selectedTargetDir = "";
+
         addToRecentFiles(droppedPath);
 
         finishDrop(i18n.updatedWorkFile);

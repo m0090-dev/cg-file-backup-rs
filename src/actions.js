@@ -165,8 +165,6 @@ export async function OnExecute() {
         }
       }
 
-      //const targetPath = tab.selectedTargetDir || tab.backupDir;
-
       const targetPath = tab.selectedTargetDir || tab.backupDir || "";
       console.log("DEBUG JS: Final targetPath sent to Rust =", targetPath);
 

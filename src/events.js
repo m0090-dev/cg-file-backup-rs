@@ -52,6 +52,8 @@ export function setupGlobalEvents() {
     if (res) {
       tab.workFile = res;
       tab.workFileSize = await GetFileSize(res);
+      tab.backupDir = ""; 
+      tab.selectedTargetDir = "";
       addToRecentFiles(res);
       renderTabs();
       UpdateDisplay();
@@ -216,15 +218,13 @@ export function setupGlobalEvents() {
     );
 
     if (radio) {
-      // 1. ラジオボタンを物理的にチェック
+      // ラジオボタンを物理的にチェック
       radio.checked = true;
 
-      // 2. 【重要】changeイベントを強制発火させる
-      // これにより、上の document.addEventListener('change', ...) 内の
-      // tab.backupMode = value や UpdateDisplay() が自動的に走り、完全に同期されます。
+      // changeイベントを強制発火させる
       radio.dispatchEvent(new Event("change", { bubbles: true }));
 
-      // 3.念のため確実に内部データも更新
+      // 念のため確実に内部データも更新
       const tab = getActiveTab();
       if (tab) tab.backupMode = newMode;
 

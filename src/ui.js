@@ -87,6 +87,8 @@ export function renderRecentFiles() {
       try {
         tab.workFileSize = await GetFileSize(path);
         tab.workFile = path;
+        tab.backupDir = "";
+        tab.selectedTargetDir = "";
         addToRecentFiles(path);
         renderRecentFiles(); // state側で呼べないためここで実行
         renderTabs();
@@ -284,23 +286,8 @@ export async function UpdateHistory() {
     const data = await GetBackupList(tab.workFile, tab.backupDir);
     if (!data || data.length === 0) {
       list.innerHTML = `<div class="info-msg">${i18n.noHistory}</div>`;
-      // 履歴が空になったら選択もリセット
-      //tab.selectedTargetDir = "";
       return;
     }
-
-    // 【この1行を追加！】
-    // 選択中の場所がないなら、リストの一番上（最新世代）を自動で選択状態にする
-    if (!tab.selectedTargetDir) {
-      const firstPath = data[0].filePath;
-      const lastIdx = Math.max(
-        firstPath.lastIndexOf("/"),
-        firstPath.lastIndexOf("\\"),
-      );
-      tab.selectedTargetDir =
-        lastIdx !== -1 ? firstPath.substring(0, lastIdx) : "";
-    }
-
     data.sort((a, b) => b.fileName.localeCompare(a.fileName));
 
     // --- 修正ポイント：勝手に tab の中身を書き換えない ---
