@@ -242,28 +242,6 @@ pub async fn backup_or_diff(
         }
     }
 
-    /*if should_next_gen {
-        // --- 5a. 【世代交代】 新しいフォルダへ移行 ---
-        let _ = fs::remove_file(&temp_diff);
-        let new_idx = current_idx + 1;
-
-        println!("DEBUG: Creating new generation: idx {}", new_idx);
-        let new_gen_dir =
-            auto_generation::create_new_generation(&project_root, new_idx, &work_file)?;
-
-        let new_base_full = new_gen_dir.join(format!("{}.base", file_name));
-        let final_path = new_gen_dir.join(format!("{}.{}.{}.diff", file_name, ts, algo));
-
-        crate::app::hdiff::create_hdiff(
-            app.clone(),
-            &new_base_full.to_string_lossy(),
-            &work_file,
-            &final_path.to_string_lossy(),
-            &compress,
-        )
-        .await
-    } */
-
     if should_next_gen {
         // --- 5a. 【世代交代】 ここを新しいロジックに差し替えます ---
         let _ = fs::remove_file(&temp_diff);
