@@ -122,115 +122,130 @@ export function renderRecentFiles() {
   });
 }
 
-/**
- * タブリストを描画する（ドラッグ＆ドロップによる並び替え機能付き）
- */
+
+//TODO: Drag and drop関係はtauri v2が修整されたら正常動作するはず
 export function renderTabs() {
   const list = document.getElementById("tabs-list");
   if (!list) return;
-  list.innerHTML = "";
 
-  // ポップアップ管理用
+  // 初期化
+  list.innerHTML = "";
+  
+  const clearGlobals = () => {
+    const existingMenu = document.querySelector(".tab-context-menu");
+    if (existingMenu) existingMenu.remove();
+    const existingTooltips = document.querySelectorAll(".tab-tooltip");
+    existingTooltips.forEach(t => t.remove());
+  };
+  clearGlobals();
+
   let tooltip = null;
 
-  tabs.forEach((tab) => {
+  tabs.forEach((tab, index) => {
     const el = document.createElement("div");
-    // 基本クラス
     el.className = `tab-item ${tab.active ? "active" : ""}`;
 
-    // 表示名の決定
     const fileName = tab.workFile
       ? tab.workFile.split(/[\\/]/).pop()
-      : i18n?.selectedWorkFile || "New Tab";
+      : i18n?.selectedWorkFile || "No file selected";
     el.textContent = fileName;
 
-    // --- 【追加】マウスホバーによるポップアップ表示 ---
-    el.addEventListener("mouseenter", (e) => {
-      if (tooltip) tooltip.remove();
+    const removeTooltip = () => {
+      if (tooltip) { tooltip.remove(); tooltip = null; }
+    };
 
+    // --- ツールチップ・ドラッグ設定（既存ロジック維持） ---
+    el.addEventListener("mouseenter", () => {
+      if (document.querySelector(".tab-context-menu")) return;
+      removeTooltip();
       tooltip = document.createElement("div");
       tooltip.className = "tab-tooltip";
-
       const fullPath = tab.workFile || "No file selected";
-      // 内容：タブ名(強調) + フルパス(コード風)
       tooltip.innerHTML = `<b>${fileName}</b><code>${fullPath}</code>`;
-
       document.body.appendChild(tooltip);
-
-      // 表示位置の計算（タブの直下）
       const rect = el.getBoundingClientRect();
       tooltip.style.left = `${rect.left}px`;
       tooltip.style.top = `${rect.bottom + 5}px`;
     });
+    el.addEventListener("mouseleave", removeTooltip);
+    el.addEventListener("mousedown", removeTooltip);
 
-    // マウスが離れたらポップアップを消す
-    el.addEventListener("mouseleave", () => {
-      if (tooltip) {
-        tooltip.remove();
-        tooltip = null;
-      }
-    });
-
-    // ドラッグ開始時やクリック時にもポップアップが残らないように制御
-    el.addEventListener("mousedown", () => {
-      if (tooltip) {
-        tooltip.remove();
-        tooltip = null;
-      }
-    });
-
-    // --- ドラッグ＆ドロップ設定 ---
-    el.draggable = true;
+    el.draggable = true; 
     el.dataset.id = tab.id;
+    el.ondragstart = (e) => { removeTooltip(); el.classList.add("dragging"); e.dataTransfer.setData("text/plain", tab.id); };
+    el.ondragover = (e) => { e.preventDefault(); e.stopPropagation(); el.classList.add("drag-over"); };
+    el.ondragleave = () => el.classList.remove("drag-over");
+    el.ondragend = () => { el.classList.remove("dragging"); list.querySelectorAll(".tab-item").forEach(i => i.classList.remove("drag-over")); };
+    el.ondrop = (e) => { e.preventDefault(); const dId = e.dataTransfer.getData("text/plain"); if (dId && dId !== el.dataset.id) reorderTabs(dId, el.dataset.id); };
 
-    // ドラッグ開始
-    el.ondragstart = (e) => {
-      el.classList.add("dragging");
-      // ドラッグ中のデータをセット（IDを渡す）
-      e.dataTransfer.setData("text/plain", tab.id);
-      e.dataTransfer.effectAllowed = "move";
-    };
+    el.onclick = () => { removeTooltip(); switchTab(tab.id); };
 
-    // ドラッグ中（他のタブの上を通過時）
-    el.ondragover = (e) => {
-      e.preventDefault(); // ドロップを許可するために必須
-      e.dataTransfer.dropEffect = "move";
-      el.classList.add("drag-over");
-    };
-
-    // ドラッグが離れた時
-    el.ondragleave = () => {
-      el.classList.remove("drag-over");
-    };
-
-    // ドラッグ終了（成功・失敗問わず）
-    el.ondragend = () => {
-      el.classList.remove("dragging");
-      // 全てのハイライトを消去
-      list
-        .querySelectorAll(".tab-item")
-        .forEach((item) => item.classList.remove("drag-over"));
-    };
-
-    // ドロップされた時
-    el.ondrop = (e) => {
-      e.preventDefault();
-      const draggedId = e.dataTransfer.getData("text/plain");
-      const targetId = el.dataset.id;
-
-      if (draggedId !== targetId) {
-        // stateまたはactionsにある並び替え関数を呼び出す
-        reorderTabs(draggedId, targetId);
-      }
-    };
-
-    // --- 既存のクリックイベント ---
-    el.onclick = () => switchTab(tab.id);
-
-    // 右クリックで削除
+    // --- 右クリックメニュー（空表示防止版） ---
     el.oncontextmenu = (e) => {
       e.preventDefault();
-      if (tabs.length > 1) removeTab(tab.id);
+      e.stopPropagation();
+      removeTooltip();
+
+      const existingMenu = document.querySelector(".tab-context-menu");
+      if (existingMenu) existingMenu.remove();
+
+      // 1. まずは一時的なフラグメントや配列で項目を準備する
+      const menuItems = [];
+
+      if (index > 0) {
+        const item = document.createElement("div");
+        item.className = "tab-menu-item";
+        item.innerHTML = `<span>${i18n.tabMenuMoveLeft}</span><span class="tab-menu-shortcut">◀</span>`;
+        item.onclick = (ev) => { ev.stopPropagation(); reorderTabs(tab.id, tabs[index - 1].id); menu.remove(); };
+        menuItems.push(item);
+      }
+
+      if (index < tabs.length - 1) {
+        const item = document.createElement("div");
+        item.className = "tab-menu-item";
+        item.innerHTML = `<span>${i18n.tabMenuMoveRight}</span><span class="tab-menu-shortcut">▶</span>`;
+        item.onclick = (ev) => { ev.stopPropagation(); reorderTabs(tab.id, tabs[index + 1].id); menu.remove(); };
+        menuItems.push(item);
+      }
+
+      if (tabs.length > 1) {
+        const sep = document.createElement("div");
+        sep.className = "tab-menu-separator";
+        menuItems.push(sep);
+
+        const del = document.createElement("div");
+        del.className = "tab-menu-item danger";
+        del.innerHTML = `<span>${i18n.tabMenuClose}</span><span class="tab-menu-shortcut">×</span>`;
+        del.onclick = (ev) => { ev.stopPropagation(); removeTab(tab.id); menu.remove(); };
+        menuItems.push(del);
+      }
+
+      // 2. 項目が一つもなければメニュー自体を作らない
+      if (menuItems.length === 0) return;
+
+      // 3. 項目がある場合のみメニューを構築
+      const menu = document.createElement("div");
+      menu.className = "tab-context-menu";
+      menuItems.forEach(item => menu.appendChild(item));
+
+      document.body.appendChild(menu);
+      
+      const menuRect = menu.getBoundingClientRect();
+      let left = e.clientX;
+      let top = e.clientY;
+      if (left + menuRect.width > window.innerWidth) left -= menuRect.width;
+      if (top + menuRect.height > window.innerHeight) top -= menuRect.height;
+
+      menu.style.left = `${left}px`;
+      menu.style.top = `${top}px`;
+
+      const closeMenu = (ev) => {
+        if (!menu.contains(ev.target)) {
+          menu.remove();
+          document.removeEventListener("mousedown", closeMenu);
+        }
+      };
+      setTimeout(() => document.addEventListener("mousedown", closeMenu), 50);
     };
 
     list.appendChild(el);

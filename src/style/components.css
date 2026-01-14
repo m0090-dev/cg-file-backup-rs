@@ -128,6 +128,63 @@
   animation: tabTooltipFadeIn 0.15s ease-out; /* 他のポップアップと共通の動き */
 }
 
+
+
+/* --- タブ操作専用 コンテキストメニュー --- */
+.tab-context-menu {
+  position: fixed;
+  z-index: 10000;
+  background: #1e1e1e; /* タブバーの背景に近い色 */
+  border: 1px solid #333;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  padding: 4px 0;
+  min-width: 150px;
+  user-select: none;
+  font-family: sans-serif;
+}
+
+.tab-menu-item {
+  padding: 8px 15px;
+  font-size: 12px;
+  color: #ccc;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.tab-menu-item:hover {
+  background: #383838;
+  color: #fff;
+}
+
+/* 削除ボタンなどは色を変えて強調 */
+.tab-menu-item.danger {
+  color: #ff5555;
+}
+
+.tab-menu-item.danger:hover {
+  background: #442222;
+  color: #ff8888;
+}
+
+.tab-menu-separator {
+  height: 1px;
+  background: #333;
+  margin: 4px 0;
+}
+
+/* ショートカットキー風のヒント
+.tab-menu-shortcut {
+  font-size: 10px;
+  opacity: 0.5;
+  margin-left: 10px;
+}
+
+
+
 /* ホバー時の表示制御 */
 #workfile-btn:hover + .recent-files-section,
 .recent-files-section:hover {

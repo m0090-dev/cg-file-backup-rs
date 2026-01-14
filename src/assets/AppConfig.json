@@ -83,7 +83,10 @@
       "backupMode": "Backup Mode",
       "modeFull": "Full Backup",
       "modeArc": "Create Archive",
-      "modeDiff": "Differential Backup"
+      "modeDiff": "Differential Backup",
+      "tabMenuMoveLeft": "Move Left",
+      "tabMenuMoveRight": "Move Right",
+      "tabMenuClose": "Close Tab"
     },
     "ja": {
       "settings": "設定",
@@ -160,7 +163,10 @@
       "backupMode": "バックアップモード",
       "modeFull": "フルバックアップ",
       "modeArc": "アーカイブ作成",
-      "modeDiff": "差分バックアップ"
+      "modeDiff": "差分バックアップ",
+      "tabMenuMoveLeft": "左へ移動",
+      "tabMenuMoveRight": "右へ移動",
+      "tabMenuClose": "タブを閉じる"
     }
   }
 }
