@@ -282,6 +282,16 @@ pub fn apply_window_visibility(app: AppHandle, show: bool) -> Result<(), String>
     Ok(())
 }
 
+pub fn apply_window_always_on_top(app: AppHandle, flag: bool) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("main") {
+           let _ = window.set_always_on_top(flag);
+    } else {
+        return Err("Main window not found".into());
+    }
+    Ok(())
+}
+
+
 // 共通化：トレイメニューだけを生成するヘルパー関数
 pub fn create_tray_menu<R: tauri::Runtime>(
     app: &tauri::AppHandle<R>,

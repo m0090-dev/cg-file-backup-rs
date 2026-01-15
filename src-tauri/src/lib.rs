@@ -115,9 +115,7 @@ pub fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) 
                     _ => false,
                 };
                 (val, id.to_string())
-            }; // ここで cfg がスコープ外になり、ロックが解除（Unlock）されます！
-
-            // ロックが解除された後なので、save() を呼んでもデッドロックしません
+            }; 
             let _ = state.save();
 
             // 以降の処理
@@ -240,9 +238,14 @@ pub fn run() {
 
             // --- 起動時の完全同期ロジック ---
             let tray_enabled = config.tray_mode;
+            let always_on_top_enabled = config.always_on_top;
 
-            // 1. ウィンドウの可視性設定
+
+            // ウィンドウの可視性設定を復元
             let _ = utils::apply_window_visibility(app.handle().clone(), !tray_enabled);
+
+            // ウィンドウの最前面設定を復元
+              let _ = utils::apply_window_always_on_top(app.handle().clone(),always_on_top_enabled);
 
             // 2. メニューアイテムのチェック状態を同期
             if let Some(item) = menu
