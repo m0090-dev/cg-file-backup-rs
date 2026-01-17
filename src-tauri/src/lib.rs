@@ -313,22 +313,35 @@ pub fn run() {
                                 if shortcut == &quit_shortcut {
                                     app_handle.exit(0);
                                 } else if shortcut == &about_shortcut {
-                                    // app_handle から現在の State を取得
                                     let state = app_handle.state::<AppState>();
-
-                                    // get_language_text に State をそのまま渡すためのクロージャ
                                     let t = |key: &str| -> String {
-                                        // inner() を呼ばず、state.clone() で State 型のまま渡す
                                         get_language_text(state.clone(), key)
                                             .unwrap_or_else(|_| key.to_string())
                                     };
 
-                                    // ダイアログ表示
-                                    let _ = app_handle
-                                        .dialog()
-                                        .message(t("aboutText"))
-                                        .title(t("about"))
-                                        .show(|_| {});
+                                    if let Some(window) = app_handle.get_webview_window("main") {
+                                        // --- 修正ポイント ---
+                                        // 現在の状態を保存
+                                        let is_always_on_top =
+                                            state.config.lock().unwrap().always_on_top;
+
+                                        // ダイアログを出す前に一時的に解除（これでダイアログが上に来れる）
+                                        if is_always_on_top {
+                                            let _ = window.set_always_on_top(false);
+                                        }
+
+                                        let window_clone = window.clone();
+                                        window
+                                            .dialog()
+                                            .message(t("aboutText"))
+                                            .title(t("about"))
+                                            .show(move |_| {
+                                                // ダイアログが閉じられたら元の設定に戻す
+                                                if is_always_on_top {
+                                                    let _ = window_clone.set_always_on_top(true);
+                                                }
+                                            });
+                                    }
                                 }
                             }
                         })
