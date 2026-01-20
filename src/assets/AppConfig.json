@@ -89,7 +89,9 @@
       "tabMenuClose": "Close Tab",
       "labelWorkFile": "Work File:",
       "labelLocation": "Location:",
-      "delete": "Delete"
+      "delete": "Delete",
+      "searchPlaceholder": "Search...",
+      "readyStatus": "Ready"
     },
     "ja": {
       "settings": "設定",
@@ -172,7 +174,9 @@
       "tabMenuClose": "タブを閉じる",
       "labelWorkFile": "作業ファイル:",
       "labelLocation": "バックアップ先:",
-      "delete": "削除"
+      "delete": "削除",
+      "searchPlaceholder": "検索...",
+      "readyStatus": "準備完了"
     }
   }
 }

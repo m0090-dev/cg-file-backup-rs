@@ -22,7 +22,6 @@ import {
 import { setupGlobalEvents } from "./events";
 
 // --- 初期化ロジック ---
-
 async function Initialize() {
   const data = await GetI18N();
 
@@ -38,6 +37,10 @@ async function Initialize() {
     const el = document.getElementById(id);
     if (el) el.textContent = text || "";
   };
+  const setPlaceholder = (id, text) => {
+    const el = document.getElementById(id);
+    if (el) el.placeholder = text || "";
+  };
 
   const setQueryText = (sel, text) => {
     const el = document.querySelector(sel);
@@ -47,10 +50,15 @@ async function Initialize() {
   setQueryText(".action-section h3", i18n.newBackupTitle);
 
   setQueryText(".history-section h3", i18n.historyTitle);
-
+  setQueryText(".recent-title", i18n.recentFilesTitle);
   setText("workfile-btn", i18n.workFileBtn);
 
   setText("backupdir-btn", i18n.backupDirBtn);
+
+  setText("label-target", i18n.labelWorkFile); 
+  setText("label-location", i18n.labelLocation);
+  setPlaceholder("history-search", i18n.searchPlaceholder || "Search...");
+  setText("progress-status", i18n.readyStatus || "Ready");
 
   const titles = document.querySelectorAll(".mode-title");
 

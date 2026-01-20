@@ -524,9 +524,15 @@ pub fn get_backup_list(work_file: String, backup_dir: String) -> Result<Vec<Back
         .file_stem()
         .and_then(|s| s.to_str())
         .unwrap_or("");
-
-    let valid_exts = vec![".diff", ".zip", ".tar.gz", ".tar", ".gz"];
-
+       
+    let file_path_ext:String = match file_path_obj.extension().and_then(|s| s.to_str()) {
+        Some(ext) => format!(".{}", ext),
+        None => String::new(),
+    };
+    let mut valid_exts = vec![".diff", ".zip", ".tar.gz", ".tar", ".gz"];
+    if !file_path_ext.is_empty() {
+      valid_exts.push(&file_path_ext);
+    }
     // 拡張子判定ヘルパー
     let is_valid_ext = |name: &str| -> bool {
         let n = name.to_lowercase();

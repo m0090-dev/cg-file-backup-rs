@@ -60,13 +60,6 @@ export function showFloatingError(text) {
 export function renderRecentFiles() {
   const list = document.getElementById("recent-list");
   const section = document.getElementById("recent-files-section");
-  let titleEl = document.querySelector(".recent-title");
-  if (!titleEl) {
-    titleEl = document.createElement("div");
-    titleEl.className = "recent-title";
-    section.insertBefore(titleEl, list);
-  }
-  titleEl.textContent = i18n?.recentFilesTitle || "RECENT FILES";
   if (!list) return;
   if (recentFiles.length === 0) {
     list.innerHTML = `<span class="recent-empty">No recent files</span>`;
@@ -289,15 +282,6 @@ export function renderTabs() {
 export function UpdateDisplay() {
   const tab = getActiveTab();
   if (!i18n || !tab) return;
-  const workFileLabel = document.getElementById("label-target");
-  const locationLabel = document.getElementById("label-location");
-
-  if (workFileLabel) {
-    workFileLabel.textContent = i18n.labelWorkFile || "Work file:";
-  }
-  if (locationLabel) {
-    locationLabel.textContent = i18n.labelLocation || "Location:";
-  }
   const fileEl = document.getElementById("selected-workfile");
   const dirEl = document.getElementById("selected-backupdir");
   if (fileEl)
@@ -330,10 +314,12 @@ export function UpdateDisplay() {
   const cSel = document.getElementById("compact-mode-select");
   if (cSel && mode) cSel.value = mode;
 }
-
 export async function UpdateHistory() {
   const tab = getActiveTab();
   const list = document.getElementById("diff-history-list");
+  const searchInput = document.getElementById("history-search");
+  const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : "";
+
   if (!list || !i18n) return;
   if (!tab?.workFile) {
     list.innerHTML = `<div class="info-msg">${i18n.selectFileFirst}</div>`;
@@ -341,36 +327,45 @@ export async function UpdateHistory() {
   }
 
   try {
-    const data = await GetBackupList(tab.workFile, tab.backupDir);
+    let data = await GetBackupList(tab.workFile, tab.backupDir);
     if (!data || data.length === 0) {
       list.innerHTML = `<div class="info-msg">${i18n.noHistory}</div>`;
       return;
     }
+
+    // --- ファイル名の降順でソート ---
     data.sort((a, b) => b.fileName.localeCompare(a.fileName));
 
-    // --- 修正ポイント：勝手に tab の中身を書き換えない ---
     // 1. 本来の最新世代を取得
     const latestGenNumber = Math.max(
       ...data.map((item) => item.generation || 0),
     );
 
-    // 2. 表示用のパスを決定する（tab.selectedTargetDir が優先）
+    // 2. 表示用のパスを決定する
     let activeDirPath = tab.selectedTargetDir;
-
-    // もし tab.selectedTargetDir が完全に「空」の時だけ、最新を仮表示として採用する
-    // ※ ここで tab.selectedTargetDir = ... と代入しないのがミソです
-
     if (!activeDirPath) {
       const first = data[0];
-      // OSを問わず、最後のスラッシュ（/ または \）より前を抽出する
       activeDirPath = first.filePath.replace(/[\\/][^\\/]+$/, "");
     }
 
+    // --- ハイライト用のヘルパー関数 ---
+    const highlight = (text, term) => {
+      if (!term) return text;
+      const regex = new RegExp(`(${term})`, "gi");
+      return text.replace(regex, `<mark style="background-color: #ffeb3b; color: #000; padding: 0 2px; border-radius: 2px;">$1</mark>`);
+    };
+
     const itemsHtml = await Promise.all(
       data.map(async (item) => {
-        const note = await ReadTextFile(item.filePath + ".note").catch(
-          () => "",
-        );
+        const note = await ReadTextFile(item.filePath + ".note").catch(() => "");
+        
+        // --- 検索フィルタリング (ファイル名 または メモ に含まれるか) ---
+        if (searchTerm) {
+          const inFileName = item.fileName.toLowerCase().includes(searchTerm);
+          const inNote = note.toLowerCase().includes(searchTerm);
+          if (!inFileName && !inNote) return null; // ヒットしない場合はスキップ
+        }
+
         const isDiffFile = item.fileName.toLowerCase().endsWith(".diff");
         const isArchive = !isDiffFile && item.generation === 0;
 
@@ -387,7 +382,6 @@ export async function UpdateHistory() {
           genBadge = `<span style="font-size:10px; color:#fff; background:#2f8f5b; padding:1px 4px; border-radius:3px; margin-left:5px;">Archive</span>`;
         } else {
           const currentGen = item.generation || 1;
-          // activeDirPath（選択中パス or 仮の最新パス）と一致するか判定
           const isTarget = itemDir === activeDirPath;
 
           let statusColor = isTarget ? "#2f8f5b" : "#3B5998";
@@ -403,12 +397,16 @@ export async function UpdateHistory() {
           const badgeStyle = `font-size:10px; color:#fff; background:${statusColor}; padding:1px 4px; border-radius:3px; margin-left:5px; ${isTarget ? "outline: 2px solid #2f8f5b; outline-offset: 1px;" : ""} cursor:pointer;`;
 
           statusHtml = `<div style="color:${statusColor}; font-weight:bold;">${statusIcon} ${statusText}</div>
-                      <div style="font-size:11px; color:#666;">${genLabel}: ${currentGen} ${isTarget ? "★" : ""}</div>`;
+                        <div style="font-size:11px; color:#666;">${genLabel}: ${currentGen} ${isTarget ? "★" : ""}</div>`;
 
           genBadge = `<span class="gen-selector-badge" data-dir="${itemDir}" style="${badgeStyle}">${genLabel}.${currentGen}${currentLabel}</span>`;
         }
 
         const popupContent = `${statusHtml}<hr style="border:0; border-top:1px solid #eee; margin:5px 0;"><strong>Path:</strong> ${item.filePath}${note ? `<br><hr style="border:0; border-top:1px dashed #ccc; margin:5px 0;"><strong>${i18n.backupMemo}:</strong> ${note}` : ""}`;
+
+        // ハイライト適用済みのテキストを作成
+        const displayedFileName = highlight(item.fileName, searchTerm);
+        const displayedNote = highlight(note, searchTerm);
 
         return `<div class="diff-item" style="${itemDir === activeDirPath ? "border-left: 4px solid #2f8f5b; background: #f0fff4;" : ""}">
           <div style="display:flex; align-items:center; width:100%;">
@@ -416,10 +414,10 @@ export async function UpdateHistory() {
               <input type="checkbox" class="diff-checkbox" value="${item.filePath}" style="margin-right:10px;">
               <div style="display:flex; flex-direction:column; flex:1; min-width:0;">
                 <span class="diff-name" data-hover-content="${encodeURIComponent(popupContent)}" style="font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                  ${item.fileName} ${genBadge} <span style="font-size:10px; color:#3B5998;">(${formatSize(item.fileSize)})</span>
+                  ${displayedFileName} ${genBadge} <span style="font-size:10px; color:#3B5998;">(${formatSize(item.fileSize)})</span>
                 </span>
                 <span style="font-size:10px; color:#888;">${item.timestamp}</span>
-                ${note ? `<div style="font-size:10px; color:#2f8f5b; font-style:italic; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"> ${note}</div>` : ""}
+                ${note ? `<div style="font-size:10px; color:#2f8f5b; font-style:italic; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"> ${displayedNote}</div>` : ""}
               </div>
             </label>
             <button class="note-btn" data-path="${item.filePath}" style="background:none; border:none; cursor:pointer; font-size:14px; padding:4px;"></button>
@@ -428,38 +426,39 @@ export async function UpdateHistory() {
       }),
     );
 
-    list.innerHTML = itemsHtml.join("");
+    // フィルタで null になった要素を除外して結合
+    list.innerHTML = itemsHtml.filter(html => html !== null).join("");
 
-    // --- イベントリスナーの追加 ---
+    // --- 検索窓にイベントリスナーを登録 (初回のみ) ---
+    if (searchInput && !searchInput.dataset.listener) {
+      searchInput.addEventListener("input", () => UpdateHistory());
+      searchInput.dataset.listener = "true";
+    }
+
+    // --- イベントリスナーの再追加 (既存コード) ---
     list.querySelectorAll(".gen-selector-badge").forEach((el) => {
       el.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        // ユーザーの意思を tab.selectedTargetDir に叩き込む
         tab.selectedTargetDir = el.getAttribute("data-dir");
         saveCurrentSession();
         UpdateHistory();
       });
     });
 
-    // --- メモボタンの修正版リスナー ---
     list.querySelectorAll(".note-btn").forEach((btn) => {
       btn.onclick = async (e) => {
         e.preventDefault();
         e.stopPropagation();
-
         const path = btn.getAttribute("data-path");
         const notePath = path + ".note";
-
-        // ファイルから現在のメモを読み込み
         const currentNote = await ReadTextFile(notePath).catch(() => "");
 
-        // ダイアログを表示（冒頭でインポート済みの関数）
         showMemoDialog(currentNote, async (newText) => {
           try {
             await WriteTextFile(notePath, newText);
             showFloatingMessage(i18n.memoSaved);
-            UpdateHistory(); // 再描画
+            UpdateHistory();
           } catch (err) {
             console.error(err);
             showFloatingError(i18n.memoSaveError);
@@ -512,6 +511,7 @@ function createTooltipElement() {
 
 export function toggleProgress(show, text = "") {
   const displayMsg = text || (i18n ? i18n.processingMsg : "Processing...");
+  const readyText = i18n ? i18n.readyStatus : "Ready";
   const container = document.getElementById("progress-container");
   const bar = document.getElementById("progress-bar");
   const status = document.getElementById("progress-status");
@@ -538,7 +538,7 @@ export function toggleProgress(show, text = "") {
       if (container) container.style.display = "none";
       if (status) status.style.display = "none";
       if (btn) btn.disabled = false;
-      if (cSts) cSts.textContent = "Ready";
+      if (cSts) cSts.textContent = readyText;
       if (cBar) cBar.style.width = "0%";
       if (cBtn) cBtn.disabled = false;
     }, 500);

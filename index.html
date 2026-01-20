@@ -137,7 +137,24 @@
           </div>
 
           <div id="history-section" class="history-section">
-            <h3 id="title-history">Backup History / Restore</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <h3 id="title-history" style="margin: 0;">Backup History / Restore</h3>
+              <input 
+                type="text" 
+                id="history-search" 
+                placeholder=" Search..." 
+                style="
+                  padding: 4px 10px;
+                  font-size: 11px;
+                  border: 1px solid #ddd;
+                  border-radius: 15px;
+                  width: 130px;
+                  outline: none;
+                  background: #fafafa;
+                "
+              />
+            </div>
+            
             <div id="diff-history-list" class="history-container"></div>
 
             <div class="history-controls">
