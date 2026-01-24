@@ -4,6 +4,31 @@ A simple, lightweight backup utility built with Tauri (Rust + Svelte), specifica
 
 This tool was created by the author for personal use to ensure quick and reliable versioning during creative workflows.
 
+
+## ✅ Implementation Status
+The following is the current progress of features and planned updates.
+
+---
+
+### Core Backup Functions
+- [x] **Full Copy**: Simple duplication of workspace files.  
+- [x] **Archive**: Support for zip and tar.gz formats.  
+- [ ] **Encrypted Archive**: ZIP with password protection (Pending).  
+- [x] **Differential (hdiff)**: Supports zstd / lzma2 / none compression methods.  
+- [ ] **Differential (bsdiff)**: (Pending).  
+- [x] **Generation Management**: Automatically creates a new ".base" (full copy baseline) and updates the backup destination when the diff size exceeds a threshold.  
+
+---
+
+### User Interface (UI/UX)
+- [x] **Tab Management**: Manage multiple projects simultaneously. Supports reordering, right-click to delete, and path/filename display on focus.  
+- [x] **Backup History**: Browse history with metadata display (path, notes, and generation info) on focus.  
+- [x] **Note System**: Create text memos attached to backup entries (stored as ".note" files) via the Note button.  
+- [x] **Compact Mode**: Locks the window to a minimal size.  
+- [x] **Tray Mode**: Minimizes the app to the system tray and hides the window.  
+- [x] **Window Options**: "Always on Top" and "Restore Previous State" functionality.  
+- [x] **Multi-language**: Support for English and Japanese.  
+
 ## 🔎 Key Features
 
 - **Streamlined UI**: A single-window interface focused on "Backup" and "Restore."
