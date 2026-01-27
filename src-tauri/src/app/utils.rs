@@ -19,7 +19,7 @@ use tauri_plugin_shell::ShellExt;
 use zip::write::SimpleFileOptions;
 use zip::ZipArchive;
 use zip::ZipWriter;
-use zip::{CompressionMethod, AesMode};
+use zip::{AesMode, CompressionMethod};
 
 /// ファイル名からタイムスタンプを抽出する (Go版のロジック通り)
 pub fn extract_timestamp_from_backup(path: &str) -> Result<String, String> {
@@ -133,10 +133,12 @@ pub fn copy_file(src: &str, dst: &str) -> Result<(), String> {
     Ok(())
 }
 
-
 pub fn zip_backup_file(src: &str, backup_dir: &Path, password: &str) -> Result<(), String> {
     // 1. 保存先の決定 (既存ロジック維持)
-    let stem = Path::new(src).file_stem().ok_or("Invalid source path")?.to_string_lossy();
+    let stem = Path::new(src)
+        .file_stem()
+        .ok_or("Invalid source path")?
+        .to_string_lossy();
     let zip_filename = timestamped_name(&format!("{}.zip", stem));
     let zip_path = backup_dir.join(zip_filename);
 
@@ -151,7 +153,10 @@ pub fn zip_backup_file(src: &str, backup_dir: &Path, password: &str) -> Result<(
         .with_aes_encryption(AesMode::Aes256, password);
 
     // 3. アーカイブ内にファイルエントリー作成
-    let file_name = Path::new(src).file_name().ok_or("Invalid file name")?.to_string_lossy();
+    let file_name = Path::new(src)
+        .file_name()
+        .ok_or("Invalid file name")?
+        .to_string_lossy();
     zip.start_file(file_name.to_string(), options)
         .map_err(|e| e.to_string())?;
 
@@ -161,11 +166,9 @@ pub fn zip_backup_file(src: &str, backup_dir: &Path, password: &str) -> Result<(
 
     // 5. 書き込み確定
     zip.finish().map_err(|e| e.to_string())?;
-    
+
     Ok(())
 }
-
-
 
 pub fn tar_backup_file(src: &str, backup_dir: &Path) -> Result<(), String> {
     let stem = Path::new(src).file_stem().unwrap().to_string_lossy();
@@ -246,10 +249,12 @@ pub fn restore_archive(archive_path: &str, work_file: &str) -> Result<(), String
 
 pub fn apply_compact_mode(window: &WebviewWindow, is_compact: bool) -> tauri::Result<()> {
     // 1. まず「何でもあり」の状態にする (制約の完全解除)
-    window.set_resizable(true)?;
-    window.set_min_size(None::<Size>)?;
-    window.set_max_size(None::<Size>)?;
-
+    #[cfg(desktop)]
+    {
+        window.set_resizable(true)?;
+        window.set_min_size(None::<Size>)?;
+        window.set_max_size(None::<Size>)?;
+    }
     let (width, height, title) = if is_compact {
         (300.0, 210.0, "cg-file-backup (Compact mode)")
     } else {
@@ -258,29 +263,37 @@ pub fn apply_compact_mode(window: &WebviewWindow, is_compact: bool) -> tauri::Re
 
     let new_size = Size::Logical(LogicalSize::new(width, height));
 
-    // 2. タイトルを変更
-    window.set_title(title)?;
+    #[cfg(desktop)]
+    {
+        // 2. タイトルを変更
+        window.set_title(title)?;
 
-    // 3. サイズを変更
-    // ここで一旦サイズが変わるはずです
-    window.set_size(new_size)?;
+        // 3. サイズを変更
+        // ここで一旦サイズが変わるはずです
+        window.set_size(new_size)?;
 
-    // 4. (重要) サイズを固定したい場合は、サイズ変更のあとに設定する
-    // デバッグのため、もしこれでも動かないなら下の2行を消してみてください
-    window.set_min_size(Some(new_size))?;
-    window.set_max_size(Some(new_size))?;
-
+        // 4. (重要) サイズを固定したい場合は、サイズ変更のあとに設定する
+        // デバッグのため、もしこれでも動かないなら下の2行を消してみてください
+        window.set_min_size(Some(new_size))?;
+        window.set_max_size(Some(new_size))?;
+    }
     Ok(())
 }
 
 pub fn apply_window_visibility(app: AppHandle, show: bool) -> Result<(), String> {
     if let Some(window) = app.get_webview_window("main") {
         if show {
-            window.show().map_err(|e| e.to_string())?;
-            window.unminimize().map_err(|e| e.to_string())?; // 最小化されていても戻す
-            window.set_focus().map_err(|e| e.to_string())?;
+            #[cfg(desktop)]
+            {
+                window.show().map_err(|e| e.to_string())?;
+                window.unminimize().map_err(|e| e.to_string())?; // 最小化されていても戻す
+                window.set_focus().map_err(|e| e.to_string())?;
+            }
         } else {
-            window.hide().map_err(|e| e.to_string())?;
+            #[cfg(desktop)]
+            {
+                window.hide().map_err(|e| e.to_string())?;
+            }
         }
     } else {
         return Err("Main window not found".into());
@@ -290,7 +303,10 @@ pub fn apply_window_visibility(app: AppHandle, show: bool) -> Result<(), String>
 
 pub fn apply_window_always_on_top(app: AppHandle, flag: bool) -> Result<(), String> {
     if let Some(window) = app.get_webview_window("main") {
-        let _ = window.set_always_on_top(flag);
+        #[cfg(desktop)]
+        {
+            let _ = window.set_always_on_top(flag);
+        }
     } else {
         return Err("Main window not found".into());
     }
@@ -298,6 +314,7 @@ pub fn apply_window_always_on_top(app: AppHandle, flag: bool) -> Result<(), Stri
 }
 
 // 共通化：トレイメニューだけを生成するヘルパー関数
+#[cfg(desktop)]
 pub fn create_tray_menu<R: tauri::Runtime>(
     app: &tauri::AppHandle<R>,
     config: &AppConfig,

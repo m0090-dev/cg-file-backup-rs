@@ -1,18 +1,19 @@
 use crate::app::commands::get_language_text;
 use crate::app::state::AppState;
 use crate::app::types::AppConfig;
-use tauri::menu::CheckMenuItemBuilder;
-use tauri::menu::MenuBuilder;
-use tauri::menu::MenuItemBuilder;
-use tauri::menu::PredefinedMenuItem;
-use tauri::menu::SubmenuBuilder;
-use tauri::tray::TrayIcon;
-use tauri::{
-    menu::{Menu, MenuItem},
-    tray::TrayIconBuilder,
-};
+
 use tauri::{AppHandle, Manager, Runtime, State};
 
+#[cfg(desktop)]
+use tauri::menu::{
+    CheckMenuItemBuilder, Menu, MenuBuilder, MenuItem, MenuItemBuilder, PredefinedMenuItem,
+    SubmenuBuilder,
+};
+
+#[cfg(desktop)]
+use tauri::tray::{TrayIcon, TrayIconBuilder};
+
+#[cfg(desktop)]
 pub fn setup_tray<R: Runtime>(
     app: &AppHandle<R>,
     config: &AppConfig,

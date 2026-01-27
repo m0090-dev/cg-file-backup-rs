@@ -4,18 +4,26 @@ use crate::app::config::*;
 use crate::app::state::AppState;
 use crate::app::types::AppConfig;
 use crate::app::utils;
-use crate::utils::create_tray_menu;
 use app::menu::*;
 use app::tray::*;
 use std::fs;
 use std::sync::Mutex;
 use tauri::AppHandle;
-use tauri::{menu::MenuEvent, Emitter, Manager};
+use tauri::{Emitter, Manager};
 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
-use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 use tauri_plugin_notification::NotificationExt;
 
-pub fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
+#[cfg(desktop)]
+use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+
+#[cfg(desktop)]
+use tauri::menu::MenuEvent;
+
+#[cfg(desktop)]
+use crate::utils::create_tray_menu;
+
+#[cfg(desktop)]
+pub fn handle_menu_event(app: &tauri::AppHandle, event: MenuEvent) {
     let state = app.state::<AppState>();
     let id = event.id.as_ref();
     //println!("--- Menu Event: '{}' ---", id);
@@ -239,9 +247,11 @@ pub fn run() {
             let window = app.get_webview_window("main").unwrap();
             let initial_size = tauri::Size::Logical(tauri::LogicalSize::new(640.0, 450.0));
 
-            let _ = window.set_min_size(Some(initial_size));
-            let _ = window.set_max_size(Some(initial_size));
-
+            #[cfg(desktop)]
+            {
+                let _ = window.set_min_size(Some(initial_size));
+                let _ = window.set_max_size(Some(initial_size));
+            }
             if cfg!(debug_assertions) {
                 app.handle().plugin(
                     tauri_plugin_log::Builder::default()
@@ -265,42 +275,45 @@ pub fn run() {
                 config_path,
             });
 
-            let menu = setup_menu(app.handle(), &config)?;
-            let _tray = setup_tray(app.handle(), &config);
-            app.set_menu(menu.clone())?;
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.set_focus();
-            }
-
-            // --- 起動時の完全同期ロジック ---
-            let tray_enabled = config.tray_mode;
-            let always_on_top_enabled = config.always_on_top;
-
-            // ウィンドウの可視性設定を復元
-            let _ = utils::apply_window_visibility(app.handle().clone(), !tray_enabled);
-
-            // ウィンドウの最前面設定を復元
-            let _ = utils::apply_window_always_on_top(app.handle().clone(), always_on_top_enabled);
-
-            // 2. メニューアイテムのチェック状態を同期
-            if let Some(item) = menu
-                .get("tray_mode")
-                .and_then(|i| i.as_check_menuitem().cloned())
-            {
-                let _ = item.set_checked(tray_enabled);
-            }
-
-            // 3. トレイモードでない場合は確実に表示（tauri.confのvisible:falseを考慮）
-            if !tray_enabled {
-                let _ = window.show();
-            }
-
-            app.on_menu_event(move |app_handle, event| {
-                handle_menu_event(app_handle, event);
-            });
-
             #[cfg(desktop)]
             {
+                let menu = setup_menu(app.handle(), &config)?;
+                let _tray = setup_tray(app.handle(), &config);
+                app.set_menu(menu.clone())?;
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.set_focus();
+                }
+                // --- 起動時の完全同期ロジック ---
+                let tray_enabled = config.tray_mode;
+                let always_on_top_enabled = config.always_on_top;
+
+                // ウィンドウの可視性設定を復元
+                let _ = utils::apply_window_visibility(app.handle().clone(), !tray_enabled);
+
+                // ウィンドウの最前面設定を復元
+                let _ =
+                    utils::apply_window_always_on_top(app.handle().clone(), always_on_top_enabled);
+
+                // 2. メニューアイテムのチェック状態を同期
+                #[cfg(desktop)]
+                {
+                    if let Some(item) = menu
+                        .get("tray_mode")
+                        .and_then(|i| i.as_check_menuitem().cloned())
+                    {
+                        let _ = item.set_checked(tray_enabled);
+                    }
+                }
+
+                // 3. トレイモードでない場合は確実に表示（tauri.confのvisible:falseを考慮）
+                if !tray_enabled {
+                    let _ = window.show();
+                }
+
+                app.on_menu_event(move |app_handle, event| {
+                    handle_menu_event(app_handle, event);
+                });
+
                 // 1. ショートカットの定義
                 let quit_shortcut = Shortcut::new(Some(Modifiers::CONTROL), Code::KeyQ);
                 let about_shortcut = Shortcut::new(Some(Modifiers::CONTROL), Code::KeyA);
@@ -352,6 +365,7 @@ pub fn run() {
                 app.global_shortcut().register(quit_shortcut)?;
                 app.global_shortcut().register(about_shortcut)?;
             }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

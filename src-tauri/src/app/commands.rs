@@ -36,8 +36,10 @@ pub fn set_always_on_top(
     flag: bool,
 ) -> Result<(), String> {
     // 1. ウィンドウの設定変更
-    window.set_always_on_top(flag).map_err(|e| e.to_string())?;
-
+    #[cfg(desktop)]
+    {
+        window.set_always_on_top(flag).map_err(|e| e.to_string())?;
+    }
     // 2. 設定の保存
     {
         let mut cfg = state.config.lock().unwrap();
@@ -379,7 +381,10 @@ pub async fn select_any_file(app: AppHandle, title: String) -> Result<Option<Str
     };
 
     if is_always_on_top {
-        let _ = window.set_always_on_top(false);
+        #[cfg(desktop)]
+        {
+            let _ = window.set_always_on_top(false);
+        }
     }
 
     // 3. ダイアログを表示 (既存ロジック)
@@ -391,7 +396,10 @@ pub async fn select_any_file(app: AppHandle, title: String) -> Result<Option<Str
 
     // 4. 設定を元に戻す
     if is_always_on_top {
-        let _ = window.set_always_on_top(true);
+        #[cfg(desktop)]
+        {
+            let _ = window.set_always_on_top(true);
+        }
     }
 
     match file_path {
@@ -416,19 +424,34 @@ pub async fn select_backup_folder(app: AppHandle) -> Result<Option<String>, Stri
     };
 
     if is_always_on_top {
-        let _ = window.set_always_on_top(false);
+        #[cfg(desktop)]
+        {
+            let _ = window.set_always_on_top(false);
+        }
     }
 
-    // 3. ダイアログを表示 (既存ロジック)
-    let folder_path = window
-        .dialog()
-        .file()
-        .set_title("Folder Select")
-        .blocking_pick_folder();
-
+    // 3. ダイアログを表示
+    let folder_path: Option<tauri_plugin_dialog::FilePath> = {
+        #[cfg(desktop)]
+        {
+            window
+                .dialog()
+                .file()
+                .set_title("Folder Select")
+                .blocking_pick_folder()
+        }
+        #[cfg(mobile)]
+        {
+            // モバイルではとりあえず None を返してコンパイルを通す
+            None
+        }
+    };
     // 4. 設定を元に戻す
     if is_always_on_top {
-        let _ = window.set_always_on_top(true);
+        #[cfg(desktop)]
+        {
+            let _ = window.set_always_on_top(true);
+        }
     }
 
     match folder_path {
@@ -524,14 +547,14 @@ pub fn get_backup_list(work_file: String, backup_dir: String) -> Result<Vec<Back
         .file_stem()
         .and_then(|s| s.to_str())
         .unwrap_or("");
-       
-    let file_path_ext:String = match file_path_obj.extension().and_then(|s| s.to_str()) {
+
+    let file_path_ext: String = match file_path_obj.extension().and_then(|s| s.to_str()) {
         Some(ext) => format!(".{}", ext),
         None => String::new(),
     };
     let mut valid_exts = vec![".diff", ".zip", ".tar.gz", ".tar", ".gz"];
     if !file_path_ext.is_empty() {
-      valid_exts.push(&file_path_ext);
+        valid_exts.push(&file_path_ext);
     }
     // 拡張子判定ヘルパー
     let is_valid_ext = |name: &str| -> bool {

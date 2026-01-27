@@ -2,11 +2,14 @@ use crate::app::commands::get_language_text; // 既存のコマンドをイン�
 use crate::app::state::AppState;
 use crate::app::types::AppConfig;
 use tauri::State;
-use tauri::{
-    menu::{CheckMenuItemBuilder, Menu, MenuBuilder, MenuItem, MenuItemBuilder, SubmenuBuilder},
-    AppHandle, Manager, Runtime,
+use tauri::{AppHandle, Manager, Runtime};
+
+#[cfg(desktop)]
+use tauri::menu::{
+    CheckMenuItemBuilder, Menu, MenuBuilder, MenuItem, MenuItemBuilder, SubmenuBuilder,
 };
 
+#[cfg(desktop)]
 pub fn setup_menu<R: Runtime>(app: &AppHandle<R>, config: &AppConfig) -> tauri::Result<Menu<R>> {
     // get_language_text コマンドが必要とする State を取得します
     let state: State<'_, AppState> = app.state();
