@@ -292,9 +292,30 @@ export function UpdateDisplay() {
       (tab.workFile ? ` [${formatSize(tab.workFileSize)}]` : "");
   if (dirEl) dirEl.textContent = tab.backupDir || i18n.selectedBackupDir;
 
-  const mode = document.querySelector(
-    'input[name="backupMode"]:checked',
-  )?.value;
+ 
+
+  const isCompact = document.body.classList.contains("compact-mode");
+
+  // 1. もし tab.backupMode が保存されていたら、UI（ラジオボタン/セレクトボックス）に反映させる
+  if (tab.backupMode) {
+    if (isCompact) {
+      const cSel = document.getElementById("compact-mode-select");
+      if (cSel) cSel.value = tab.backupMode;
+    } else {
+      const radio = document.querySelector(`input[name="backupMode"][value="${tab.backupMode}"]`);
+      if (radio) radio.checked = true;
+    }
+  }
+
+  // 2. 現在のUIの状態を mode 変数に取得（これ以降の判定用）
+  let mode = isCompact 
+    ? document.getElementById("compact-mode-select")?.value
+    : document.querySelector('input[name="backupMode"]:checked')?.value;
+
+  // 3. 取得した mode をデータ側に同期
+  if (mode) tab.backupMode = mode;
+
+
   const isPass =
     mode === "archive" &&
     document.getElementById("archive-format")?.value === "zip-pass";
