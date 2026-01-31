@@ -179,8 +179,6 @@ export function setupGlobalEvents() {
         radio.checked = true;
         const tab = getActiveTab();
         if (tab) tab.backupMode = value;
-        // イベントを手動で発行して同期
-        radio.dispatchEvent(new Event("change", { bubbles: true }));
       }
     }
   });

@@ -4,7 +4,6 @@ import {
   BackupOrDiff,
   RestoreBackup,
   GetFileSize,
-  GetBsdiffMaxFileSize,
   DirExists,
 } from "./tauri_exports";
 
@@ -24,7 +23,6 @@ import {
   showFloatingMessage,
 } from "./ui";
 
-let bsdiffLimit = 104857600; // デフォルト100MB (100 * 1024 * 1024)
 // --- タブ操作ロジック ---
 export function switchTab(id) {
   tabs.forEach((t) => (t.active = t.id === id));
@@ -42,6 +40,8 @@ export function addTab() {
     workFileSize: 0,
     backupDir: "",
     active: true,
+    backupMode: "diff", 
+    compressMode: "zstd"
   });
   renderTabs();
   UpdateDisplay();
