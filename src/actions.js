@@ -186,40 +186,15 @@ export async function OnExecute() {
   }
 }
 
-// --- 初期化: 上限サイズの取得 ---
-(async () => {
-  const size = await GetBsdiffMaxFileSize();
-  if (size > 0) bsdiffLimit = size;
-})();
-export function updateExecute() {
-  const tab = getActiveTab();
-  const algo = document.getElementById("diff-algo")?.value;
 
+export function updateExecute() {
+  // const tab = getActiveTab();
+  // const algo = document.getElementById("diff-algo")?.value;
   // モード取得
   let mode = document.querySelector('input[name="backupMode"]:checked')?.value;
   if (document.body.classList.contains("compact-mode")) {
     mode = document.getElementById("compact-mode-select")?.value;
   }
-
-  // 判定ロジック: tab.workFileSize を使用
-  const isTooLargeForBsdiff =
-    mode === "diff" &&
-    algo === "bsdiff" &&
-    (tab?.workFileSize || 0) > bsdiffLimit;
-
-  // 2つのボタン両方を制御
-  const btns = ["execute-backup-btn", "compact-execute-btn"];
-  btns.forEach((id) => {
-    const btn = document.getElementById(id);
-    if (!btn) return;
-
-    btn.disabled = isTooLargeForBsdiff;
-    btn.style.opacity = isTooLargeForBsdiff ? "0.5" : "1";
-    btn.style.cursor = isTooLargeForBsdiff ? "not-allowed" : "pointer";
-    btn.title = isTooLargeForBsdiff
-      ? `File too large for bsdiff (Max: ${Math.floor(bsdiffLimit / 1000000)}MB)`
-      : "";
-  });
 }
 
 // --- 復元・適用ロジック ---

@@ -54,10 +54,7 @@ pub fn get_restore_previous_state(state: State<'_, AppState>) -> bool {
     state.config.lock().unwrap().restore_previous_state
 }
 
-#[tauri::command]
-pub fn get_bsdiff_max_file_size(state: State<'_, AppState>) -> i64 {
-    state.config.lock().unwrap().bsdiff_max_file_size
-}
+
 
 #[tauri::command]
 pub fn get_auto_base_generation_threshold(state: State<'_, AppState>) -> f64 {

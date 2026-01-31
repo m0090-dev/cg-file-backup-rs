@@ -11,7 +11,6 @@ pub struct AppConfig {
     pub always_on_top: bool,
     pub restore_previous_state: bool,
     pub tray_mode: bool,
-    pub bsdiff_max_file_size: i64,
     pub auto_base_generation_threshold: f64,
     pub i18n: HashMap<String, HashMap<String, String>>,
     #[serde(skip_serializing, default)]

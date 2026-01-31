@@ -372,7 +372,6 @@ pub fn run() {
             get_config,
             set_always_on_top,
             get_restore_previous_state,
-            get_bsdiff_max_file_size,
             get_auto_base_generation_threshold,
             get_language_text,
             get_i18n,
