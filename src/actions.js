@@ -40,8 +40,8 @@ export function addTab() {
     workFileSize: 0,
     backupDir: "",
     active: true,
-    backupMode: "diff", 
-    compressMode: "zstd"
+    backupMode: "diff",
+    compressMode: "zstd",
   });
   renderTabs();
   UpdateDisplay();

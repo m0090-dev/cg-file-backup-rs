@@ -315,7 +315,7 @@ export function UpdateDisplay() {
   if (compactComp) compactComp.value = compress;
 
   // 2. 現在のUIの状態を mode 変数に取得（これ以降の判定用）
-  const mode = tab.backupMode || "diff";   
+  const mode = tab.backupMode || "diff";
   const isPass =
     mode === "archive" &&
     document.getElementById("archive-format")?.value === "zip-pass";
