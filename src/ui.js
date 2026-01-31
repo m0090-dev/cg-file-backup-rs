@@ -18,7 +18,7 @@ import {
 
 import { showMemoDialog } from "./memo.js";
 
-import { switchTab, removeTab, updateExecute, reorderTabs } from "./actions";
+import { switchTab, removeTab,reorderTabs } from "./actions";
 
 // UI描画・メッセージ系（通常版）
 export function showFloatingMessage(text) {
@@ -311,6 +311,9 @@ export function UpdateDisplay() {
   const normalComp = document.getElementById("hdiff-compress");
   const compactComp = document.getElementById("compact-hdiff-compress");
   const compress = tab.compressMode || "zstd";
+  const normalAlgo = document.getElementById("diff-algo");
+  const algo = tab.diffAlgo || "hdiff";
+  if (normalAlgo) normalAlgo.value = algo;
   if (normalComp) normalComp.value = compress;
   if (compactComp) compactComp.value = compress;
 
@@ -324,7 +327,6 @@ export function UpdateDisplay() {
     pwdArea.style.opacity = isPass ? "1" : "0.3";
     document.getElementById("archive-password").disabled = !isPass;
   }
-  updateExecute();
   // Compact同期
   const cFileEl = document.getElementById("compact-selected-file");
   if (cFileEl)

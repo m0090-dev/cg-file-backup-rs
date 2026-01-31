@@ -23,7 +23,7 @@ import {
   showFloatingMessage,
 } from "./ui";
 
-import { addTab, OnExecute, updateExecute } from "./actions";
+import { addTab, OnExecute} from "./actions";
 import { ask } from "@tauri-apps/plugin-dialog";
 import {
   isPermissionGranted,
@@ -153,6 +153,9 @@ export function setupGlobalEvents() {
     const name = e.target.name;
     const value = e.target.value;
     const tab = getActiveTab();
+    if (name == "diff-algo"){
+      if(tab) tab.diffAlgo = value;
+    }
     if (name === "backupMode") {
       if (tab) tab.backupMode = value; // データ側を確実に更新
     }
@@ -167,7 +170,6 @@ export function setupGlobalEvents() {
       id === "compact-hdiff-compress"
     ) {
       UpdateDisplay();
-      updateExecute();
       saveCurrentSession();
     }
 
@@ -231,7 +233,6 @@ export function setupGlobalEvents() {
 
       // 4. UI更新と通知
       UpdateDisplay();
-      updateExecute();
       saveCurrentSession();
       showFloatingMessage(`${i18n.updatedBackupMode || "Mode"}: ${newMode}`);
     }

@@ -96,7 +96,7 @@ export async function OnExecute() {
   UpdateDisplay();
   const mode = tab.backupMode;
   // --- 2. 差分設定の取得 (既存ロジック維持 + 圧縮設定追加) ---
-  let algo = document.getElementById("diff-algo").value;
+  let algo = tab.diffAlgo || "hdiff";
   const compress = tab.compressMode || "zstd";
 
   toggleProgress(true, i18n.processingMsg);
@@ -155,16 +155,6 @@ export async function OnExecute() {
     toggleProgress(false);
     alert(err);
     return null;
-  }
-}
-
-export function updateExecute() {
-  // const tab = getActiveTab();
-  // const algo = document.getElementById("diff-algo")?.value;
-  // モード取得
-  let mode = document.querySelector('input[name="backupMode"]:checked')?.value;
-  if (document.body.classList.contains("compact-mode")) {
-    mode = document.getElementById("compact-mode-select")?.value;
   }
 }
 
