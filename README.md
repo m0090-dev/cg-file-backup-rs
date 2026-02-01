@@ -14,8 +14,7 @@ The following is the current progress of features and planned updates.
 - [x] **Full Copy**: Simple duplication of workspace files.  
 - [x] **Archive**: Support for zip and tar.gz formats.  
 - [x] **Encrypted Archive**: ZIP with password protection (Pending).  
-- [x] **Differential (hdiff)**: Supports zstd / lzma2 / none compression methods.  
-- [ ] **Differential (bsdiff)**: (Pending).  
+- [x] **Differential (hdiff)**: Supports zstd / lzma2 / none compression methods.    
 - [x] **Generation Management**: Automatically creates a new ".base" (full copy baseline) and updates the backup destination when the diff size exceeds a threshold.  
 
 ---
@@ -69,7 +68,7 @@ npm run tauri:build
 
 If you are using the pre-compiled version, please note:
 
-- **External Dependencies**: This tool includes `hdiff-bin` and `bzip2-bin` to handle differential backups and compression. Do not delete these directories, as they are essential for the tool's core functionality.
+- **External Dependencies**: This tool includes `hdiff-bin` to handle differential backups and compression. Do not delete these directories, as they are essential for the tool's core functionality.
 - **Licenses**: This software uses several open-source libraries. You can find the list of used libraries in `CREDITS.md` and their full license texts in the `licenses/` directory.
 
 

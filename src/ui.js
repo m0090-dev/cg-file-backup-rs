@@ -18,7 +18,7 @@ import {
 
 import { showMemoDialog } from "./memo.js";
 
-import { switchTab, removeTab, updateExecute, reorderTabs } from "./actions";
+import { switchTab, removeTab,reorderTabs } from "./actions";
 
 // UI描画・メッセージ系（通常版）
 export function showFloatingMessage(text) {
@@ -279,6 +279,7 @@ export function renderTabs() {
   });
 }
 
+// 全体のUI更新
 export function UpdateDisplay() {
   const tab = getActiveTab();
   if (!i18n || !tab) return;
@@ -292,30 +293,36 @@ export function UpdateDisplay() {
       (tab.workFile ? ` [${formatSize(tab.workFileSize)}]` : "");
   if (dirEl) dirEl.textContent = tab.backupDir || i18n.selectedBackupDir;
 
- 
-
   const isCompact = document.body.classList.contains("compact-mode");
 
-  // 1. もし tab.backupMode が保存されていたら、UI（ラジオボタン/セレクトボックス）に反映させる
+  // -- tab.backupMode が保存されていたら、UI（ラジオボタン/セレクトボックス）に反映させる --
   if (tab.backupMode) {
     if (isCompact) {
       const cSel = document.getElementById("compact-mode-select");
       if (cSel) cSel.value = tab.backupMode;
     } else {
-      const radio = document.querySelector(`input[name="backupMode"][value="${tab.backupMode}"]`);
+      const radio = document.querySelector(
+        `input[name="backupMode"][value="${tab.backupMode}"]`,
+      );
       if (radio) radio.checked = true;
     }
   }
 
-  // 2. 現在のUIの状態を mode 変数に取得（これ以降の判定用）
-  let mode = isCompact 
-    ? document.getElementById("compact-mode-select")?.value
-    : document.querySelector('input[name="backupMode"]:checked')?.value;
+  // --- 各要素の同期 ---
+  const normalComp = document.getElementById("hdiff-compress");
+  const compactComp = document.getElementById("compact-hdiff-compress");
+  const compress = tab.compressMode || "zstd";
+  const normalAlgo = document.getElementById("diff-algo");
+  const algo = tab.diffAlgo || "hdiff";
+  const normalArchive = document.getElementById("archive-format");
+  const archiveFormat = tab.archiveFormat || "zip";
+  const mode = tab.backupMode || "diff";
 
-  // 3. 取得した mode をデータ側に同期
-  if (mode) tab.backupMode = mode;
-
-
+  if (normalAlgo) normalAlgo.value = algo;
+  if (normalComp) normalComp.value = compress;
+  if (compactComp) compactComp.value = compress;
+  if (normalArchive) normalArchive.value = archiveFormat;
+  
   const isPass =
     mode === "archive" &&
     document.getElementById("archive-format")?.value === "zip-pass";
@@ -324,8 +331,6 @@ export function UpdateDisplay() {
     pwdArea.style.opacity = isPass ? "1" : "0.3";
     document.getElementById("archive-password").disabled = !isPass;
   }
-  updateExecute();
-
   // Compact同期
   const cFileEl = document.getElementById("compact-selected-file");
   if (cFileEl)
@@ -335,6 +340,7 @@ export function UpdateDisplay() {
   const cSel = document.getElementById("compact-mode-select");
   if (cSel && mode) cSel.value = mode;
 }
+
 export async function UpdateHistory() {
   const tab = getActiveTab();
   const list = document.getElementById("diff-history-list");
@@ -373,13 +379,18 @@ export async function UpdateHistory() {
     const highlight = (text, term) => {
       if (!term) return text;
       const regex = new RegExp(`(${term})`, "gi");
-      return text.replace(regex, `<mark style="background-color: #ffeb3b; color: #000; padding: 0 2px; border-radius: 2px;">$1</mark>`);
+      return text.replace(
+        regex,
+        `<mark style="background-color: #ffeb3b; color: #000; padding: 0 2px; border-radius: 2px;">$1</mark>`,
+      );
     };
 
     const itemsHtml = await Promise.all(
       data.map(async (item) => {
-        const note = await ReadTextFile(item.filePath + ".note").catch(() => "");
-        
+        const note = await ReadTextFile(item.filePath + ".note").catch(
+          () => "",
+        );
+
         // --- 検索フィルタリング (ファイル名 または メモ に含まれるか) ---
         if (searchTerm) {
           const inFileName = item.fileName.toLowerCase().includes(searchTerm);
@@ -448,7 +459,7 @@ export async function UpdateHistory() {
     );
 
     // フィルタで null になった要素を除外して結合
-    list.innerHTML = itemsHtml.filter(html => html !== null).join("");
+    list.innerHTML = itemsHtml.filter((html) => html !== null).join("");
 
     // --- 検索窓にイベントリスナーを登録 (初回のみ) ---
     if (searchInput && !searchInput.dataset.listener) {
@@ -513,6 +524,19 @@ function setupHistoryPopups() {
       const rect = target.getBoundingClientRect();
       tooltip.style.left = `${rect.left}px`;
       tooltip.style.top = `${rect.bottom + 5}px`;
+
+      // 1. 高さと画面端をチェックするための変数を追加
+      const tooltipHeight = tooltip.offsetHeight;
+      const windowHeight = window.innerHeight;
+
+      // 2. 位置計算を「入り切らないなら上」という条件分岐に変更
+      let topPosition = rect.bottom + 2;
+      if (topPosition + tooltipHeight > windowHeight) {
+        topPosition = rect.top - tooltipHeight - 2;
+      }
+
+      // 3. 計算した値を代入
+      tooltip.style.top = `${topPosition}px`;
     };
 
     target.onmouseleave = () => {

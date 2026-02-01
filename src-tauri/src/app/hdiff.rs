@@ -19,7 +19,11 @@ pub async fn create_hdiff(
     match compress_algo {
         "zstd" => args.push("-c-zstd"),
         "lzma2" => args.push("-c-lzma2"),
+        "lzma" => args.push("-c-lzma"),
         "zlib" => args.push("-c-zlib"),
+        "ldef" => args.push("-c-ldef"),
+        "pbzip2" => args.push("-c-pbzip2"),
+        "bzip2" => args.push("-c-bzip2"),
         "none" => {
             // 何も追加しない（uncompress）
         }

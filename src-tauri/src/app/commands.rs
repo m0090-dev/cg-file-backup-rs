@@ -54,10 +54,7 @@ pub fn get_restore_previous_state(state: State<'_, AppState>) -> bool {
     state.config.lock().unwrap().restore_previous_state
 }
 
-#[tauri::command]
-pub fn get_bsdiff_max_file_size(state: State<'_, AppState>) -> i64 {
-    state.config.lock().unwrap().bsdiff_max_file_size
-}
+
 
 #[tauri::command]
 pub fn get_auto_base_generation_threshold(state: State<'_, AppState>) -> f64 {
@@ -552,14 +549,14 @@ pub fn get_backup_list(work_file: String, backup_dir: String) -> Result<Vec<Back
         Some(ext) => format!(".{}", ext),
         None => String::new(),
     };
-    let mut valid_exts = vec![".diff", ".zip", ".tar.gz", ".tar", ".gz"];
+    let mut valid_exts = vec![".diff".to_string(), ".zip".to_string(), ".tar.gz".to_string(), ".tar".to_string(), ".gz".to_string()];
     if !file_path_ext.is_empty() {
-        valid_exts.push(&file_path_ext);
+        valid_exts.push(file_path_ext.to_lowercase());
     }
     // 拡張子判定ヘルパー
     let is_valid_ext = |name: &str| -> bool {
         let n = name.to_lowercase();
-        valid_exts.iter().any(|ext| n.ends_with(ext))
+        valid_exts.iter().any(|ext| n.ends_with(&ext.to_lowercase()))
     };
 
     // --- 1. ルート直下のアーカイブをスキャン ---
@@ -569,10 +566,10 @@ pub fn get_backup_list(work_file: String, backup_dir: String) -> Result<Vec<Back
             if path.is_dir() {
                 continue;
             }
-
             let file_name = path.file_name().and_then(|s| s.to_str()).unwrap_or("");
-
-            if file_name.contains(base_name_only) && is_valid_ext(file_name) {
+            let f_name_lower = file_name.to_lowercase();
+            let base_lower = base_name_only.to_lowercase();
+            if f_name_lower.contains(&base_lower) && is_valid_ext(file_name) {
                 // fs::metadata で確実に最新のサイズを取得
                 if let Ok(metadata) = fs::metadata(&path) {
                     list.push(create_backup_item(file_name, &path, &metadata, 0));
@@ -611,8 +608,9 @@ pub fn get_backup_list(work_file: String, backup_dir: String) -> Result<Vec<Back
                         {
                             continue;
                         }
-
-                        if f_name.contains(base_name_only) && is_valid_ext(f_name) {
+                        let f_name_lower = f_name.to_lowercase();
+                        let base_lower = base_name_only.to_lowercase();
+                        if f_name_lower.contains(&base_lower) && is_valid_ext(f_name) {
                             // 世代フォルダ内のファイルも fs::metadata でサイズを確定
                             if let Ok(metadata) = fs::metadata(&gen_path) {
                                 list.push(create_backup_item(

@@ -23,7 +23,7 @@ import {
   showFloatingMessage,
 } from "./ui";
 
-import { addTab, OnExecute, updateExecute } from "./actions";
+import { addTab, OnExecute} from "./actions";
 import { ask } from "@tauri-apps/plugin-dialog";
 import {
   isPermissionGranted,
@@ -154,19 +154,27 @@ export function setupGlobalEvents() {
     const id = e.target.id;
     const name = e.target.name;
     const value = e.target.value;
-
+    const tab = getActiveTab();
+    if (name == "diff-algo"){
+      if(tab) tab.diffAlgo = value;
+    }
     if (name === "backupMode") {
-      const tab = getActiveTab();
       if (tab) tab.backupMode = value; // データ側を確実に更新
     }
-
+    if (id === "hdiff-compress" || id === "compact-hdiff-compress") {
+      if (tab) tab.compressMode = value;
+    }
+    if (id == "archive-format") {
+      if (tab) tab.archiveFormat = value;
+    }
     if (
       ["backupMode", "archive-format"].includes(name) ||
       id === "archive-format" ||
-      id === "diff-algo"
+      id === "diff-algo" ||
+      id === "hdiff-compress" ||
+      id === "compact-hdiff-compress"
     ) {
       UpdateDisplay();
-      updateExecute();
       saveCurrentSession();
     }
 
@@ -178,8 +186,6 @@ export function setupGlobalEvents() {
         radio.checked = true;
         const tab = getActiveTab();
         if (tab) tab.backupMode = value;
-        // イベントを手動で発行して同期
-        radio.dispatchEvent(new Event("change", { bubbles: true }));
       }
     }
   });
@@ -232,7 +238,6 @@ export function setupGlobalEvents() {
 
       // 4. UI更新と通知
       UpdateDisplay();
-      updateExecute();
       saveCurrentSession();
       showFloatingMessage(`${i18n.updatedBackupMode || "Mode"}: ${newMode}`);
     }

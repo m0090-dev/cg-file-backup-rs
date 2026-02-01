@@ -4,7 +4,6 @@ import {
   BackupOrDiff,
   RestoreBackup,
   GetFileSize,
-  GetBsdiffMaxFileSize,
   DirExists,
 } from "./tauri_exports";
 
@@ -24,7 +23,6 @@ import {
   showFloatingMessage,
 } from "./ui";
 
-let bsdiffLimit = 104857600; // デフォルト100MB (100 * 1024 * 1024)
 // --- タブ操作ロジック ---
 export function switchTab(id) {
   tabs.forEach((t) => (t.active = t.id === id));
@@ -42,6 +40,8 @@ export function addTab() {
     workFileSize: 0,
     backupDir: "",
     active: true,
+    backupMode: "diff",
+    compressMode: "zstd",
   });
   renderTabs();
   UpdateDisplay();
@@ -93,41 +93,14 @@ export async function OnExecute() {
     alert(i18n.selectFileFirst);
     return;
   }
-
-  // --- 1. モードの取得（通常・コンパクト両対応） ---
-  const isCompact = document.body.classList.contains("compact-mode");
-  tab.backupMode = isCompact 
-    ? document.getElementById("compact-mode-select").value
-    : document.querySelector('input[name="backupMode"]:checked')?.value;
-   let mode = tab.backupMode
-
+  UpdateDisplay();
+  const mode = tab.backupMode;
   // --- 2. 差分設定の取得 (既存ロジック維持 + 圧縮設定追加) ---
-  let algo = document.getElementById("diff-algo").value;
-  let compress = "zstd"; // デフォルト値
-
-  if (mode === "diff") {
-    if (isCompact) {
-      // コンパクトモード時は常にhdiffとして扱う、またはグローバルなalgo設定を流用
-      // 圧縮設定はコンパクト専用のセレクトボックスから取得
-      compress = document.getElementById("compact-hdiff-compress").value;
-    } else {
-      // 通常モード時は表示されているセレクトボックスから取得
-      compress = document.getElementById("hdiff-compress").value;
-    }
-
-    // ファイルサイズ制限チェック（bsdiff用ロジック完全維持）
-    if (algo === "bsdiff") {
-      if (tab.workFileSize > bsdiffLimit) {
-        alert(
-          `${i18n.fileTooLarge} (Limit: ${Math.floor(bsdiffLimit / 1000000)}MB)`,
-        );
-        return;
-      }
-    }
-  }
+  let algo = tab.diffAlgo || "hdiff";
+  const compress = tab.compressMode || "zstd";
+  const archiveFormat = tab.archiveFormat || "zip";
 
   toggleProgress(true, i18n.processingMsg);
-
   try {
     let successText = "";
 
@@ -138,7 +111,7 @@ export async function OnExecute() {
     }
     // --- B. アーカイブモード ---
     else if (mode === "archive") {
-      let fmt = document.getElementById("archive-format").value;
+      let fmt = archiveFormat;
       let pwd =
         fmt === "zip-pass"
           ? document.getElementById("archive-password").value
@@ -184,42 +157,6 @@ export async function OnExecute() {
     alert(err);
     return null;
   }
-}
-
-// --- 初期化: 上限サイズの取得 ---
-(async () => {
-  const size = await GetBsdiffMaxFileSize();
-  if (size > 0) bsdiffLimit = size;
-})();
-export function updateExecute() {
-  const tab = getActiveTab();
-  const algo = document.getElementById("diff-algo")?.value;
-
-  // モード取得
-  let mode = document.querySelector('input[name="backupMode"]:checked')?.value;
-  if (document.body.classList.contains("compact-mode")) {
-    mode = document.getElementById("compact-mode-select")?.value;
-  }
-
-  // 判定ロジック: tab.workFileSize を使用
-  const isTooLargeForBsdiff =
-    mode === "diff" &&
-    algo === "bsdiff" &&
-    (tab?.workFileSize || 0) > bsdiffLimit;
-
-  // 2つのボタン両方を制御
-  const btns = ["execute-backup-btn", "compact-execute-btn"];
-  btns.forEach((id) => {
-    const btn = document.getElementById(id);
-    if (!btn) return;
-
-    btn.disabled = isTooLargeForBsdiff;
-    btn.style.opacity = isTooLargeForBsdiff ? "0.5" : "1";
-    btn.style.cursor = isTooLargeForBsdiff ? "not-allowed" : "pointer";
-    btn.title = isTooLargeForBsdiff
-      ? `File too large for bsdiff (Max: ${Math.floor(bsdiffLimit / 1000000)}MB)`
-      : "";
-  });
 }
 
 // --- 復元・適用ロジック ---

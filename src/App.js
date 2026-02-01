@@ -55,7 +55,7 @@ async function Initialize() {
 
   setText("backupdir-btn", i18n.backupDirBtn);
 
-  setText("label-target", i18n.labelWorkFile); 
+  setText("label-target", i18n.labelWorkFile);
   setText("label-location", i18n.labelLocation);
   setPlaceholder("history-search", i18n.searchPlaceholder || "Search...");
   setText("progress-status", i18n.readyStatus || "Ready");

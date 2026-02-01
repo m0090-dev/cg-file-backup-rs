@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Work Backup Tool</title>
-    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./src/style.css" />
   </head>
   <body>
     <div class="container">
@@ -99,24 +99,45 @@
                   <span class="mode-desc">Save only changes</span>
                   <div
                     class="diff-options-row"
-                    style="display: flex; gap: 5px; margin-top: 5px"
+                    style="
+                      display: flex;
+                      gap: 5px;
+                      max-width: 100%;
+                      margin-top: 5px;
+                      box-sizing: border-box;
+                    "
                   >
                     <select
                       id="diff-algo"
                       class="mini-select"
-                      style="flex: 1.2"
+                      style="
+                        width: 65px;
+                        flex-shrink: 0;
+                        padding: 2px;
+                        font-size: 10px;
+                      "
                     >
-                      <option value="hdiff">Hdiff (Fast)</option>
-                      <option value="bsdiff">Bsdiff (Lib)</option>
+                      <option value="hdiff">Hdiff</option>
                     </select>
                     <select
                       id="hdiff-compress"
                       class="mini-select"
-                      style="flex: 1"
+                      style="
+                        flex-grow: 1;
+                        min-width: 0;
+                        padding: 2px;
+                        font-size: 10px;
+                        box-sizing: border-box;
+                      "
                     >
-                      <option value="zstd">zstd</option>
-                      <option value="lzma2">lzma2</option>
-                      <option value="none">none</option>
+                      <option value="none">None (Uncompressed)</option>
+                      <option value="zstd">Zstandard (zstd)</option>
+                      <option value="lzma2">LZMA2</option>
+                      <option value="lzma">LZMA</option>
+                      <option value="zlib">zlib</option>
+                      <option value="ldef">libdeflate (ldef)</option>
+                      <option value="pbzip2">pbzip2</option>
+                      <option value="bzip2">bzip2</option>
                     </select>
                   </div>
                 </div>
@@ -137,12 +158,21 @@
           </div>
 
           <div id="history-section" class="history-section">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <h3 id="title-history" style="margin: 0;">Backup History / Restore</h3>
-              <input 
-                type="text" 
-                id="history-search" 
-                placeholder=" Search..." 
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 8px;
+              "
+            >
+              <h3 id="title-history" style="margin: 0">
+                Backup History / Restore
+              </h3>
+              <input
+                type="text"
+                id="history-search"
+                placeholder=" Search..."
                 style="
                   padding: 4px 10px;
                   font-size: 11px;
@@ -154,7 +184,7 @@
                 "
               />
             </div>
-            
+
             <div id="diff-history-list" class="history-container"></div>
 
             <div class="history-controls">
@@ -266,16 +296,16 @@
               <select
                 id="compact-hdiff-compress"
                 class="mini-select"
-                style="
-                  width: 100%;
-                  padding: 4px;
-                  display: none;
-                  font-size: 10px;
-                "
+                style="width: 100%; padding: 4px; font-size: 10px"
               >
-                <option value="zstd">zstd</option>
-                <option value="lzma2">lzma2</option>
-                <option value="none">none</option>
+                   <option value="none">None (Uncompressed)</option>
+                      <option value="zstd">Zstandard (zstd)</option>
+                      <option value="lzma2">LZMA2</option>
+                      <option value="lzma">LZMA</option>
+                      <option value="zlib">zlib</option>
+                      <option value="ldef">libdeflate (ldef)</option>
+                      <option value="pbzip2">pbzip2</option>
+                      <option value="bzip2">bzip2</option>
               </select>
             </div>
           </div>
