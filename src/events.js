@@ -252,4 +252,36 @@ export function setupGlobalEvents() {
       if (view) view.classList.add("hidden");
     }
   });
+  // --- 検索窓の入力監視 ---
+  const searchInput = document.getElementById("history-search");
+  const clearBtn = document.getElementById("search-clear-btn");
+
+  if (searchInput) {
+    searchInput.addEventListener("input", (e) => {
+      const tab = getActiveTab();
+      if (tab) {
+        // 1. タブの状態に検索文字を保存
+        tab.searchQuery = e.target.value;
+	saveCurrentSession();			
+      }
+      // 2. リストを更新
+      UpdateHistory();
+    });
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      const tab = getActiveTab();
+      if (tab) {
+        tab.searchQuery = "";
+        saveCurrentSession();
+      }
+      
+      if (searchInput) {
+        searchInput.value = "";
+        searchInput.focus();
+      }
+      UpdateHistory();
+    });
+  }
 }

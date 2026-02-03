@@ -167,3 +167,36 @@ h3 {
   align-items: center;
   gap: 5px; /* バッジとの間隔 */
 }
+
+
+/* 検索窓とバツボタンの親要素 */
+.search-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* バツボタンの見た目 */
+.search-clear-btn {
+  position: absolute;
+  right: 8px; /* 入力欄の右端からの距離 */
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  display: none; 
+  outline: none;
+  transition: color 0.2s;
+}
+
+.search-clear-btn:hover {
+  color: var(--primary-blue); /* ホバー時に青くする */
+}
+
+/* 検索入力がある時だけJSでこのクラスを付与する */
+.search-clear-btn.visible {
+  display: block;
+}

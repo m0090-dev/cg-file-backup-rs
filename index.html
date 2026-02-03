@@ -169,20 +169,28 @@
               <h3 id="title-history" style="margin: 0">
                 Backup History / Restore
               </h3>
-              <input
-                type="text"
-                id="history-search"
-                placeholder=" Search..."
-                style="
-                  padding: 4px 10px;
-                  font-size: 11px;
-                  border: 1px solid #ddd;
-                  border-radius: 15px;
-                  width: 130px;
-                  outline: none;
-                  background: #fafafa;
-                "
-              />
+
+
+
+
+<div class="search-container">
+  <input
+    type="text"
+    id="history-search"
+    placeholder=" Search..."
+    style="
+      padding: 4px 25px 4px 10px; /* 右側にボタン用の余白(25px)を確保 */
+      font-size: 11px;
+      border: 1px solid #ddd;
+      border-radius: 15px;
+      width: 130px;
+      outline: none;
+      background: #fafafa;
+    "
+  />
+  <button id="search-clear-btn" class="search-clear-btn" title="Clear">&times;</button>
+</div>
+
             </div>
 
             <div id="diff-history-list" class="history-container"></div>

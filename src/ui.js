@@ -61,6 +61,7 @@ export function renderRecentFiles() {
   const list = document.getElementById("recent-list");
   const section = document.getElementById("recent-files-section");
   if (!list) return;
+  
   if (recentFiles.length === 0) {
     list.innerHTML = `<span class="recent-empty">No recent files</span>`;
     return;
@@ -345,9 +346,23 @@ export async function UpdateHistory() {
   const tab = getActiveTab();
   const list = document.getElementById("diff-history-list");
   const searchInput = document.getElementById("history-search");
-  const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : "";
+  const searchTerm = (tab?.searchQuery || "").toLowerCase().trim();
+  const clearBtn = document.getElementById("search-clear-btn");
 
   if (!list || !i18n) return;
+  if (searchInput) {
+    if (document.activeElement !== searchInput) {
+      searchInput.value = tab.searchQuery || "";
+    }
+  }
+  // --- 検索クリアボタンの表示制御 ---
+  if (clearBtn) {
+    if (searchTerm.length > 0) {
+      clearBtn.classList.add("visible");
+    } else {
+      clearBtn.classList.remove("visible");
+    }
+  }
   if (!tab?.workFile) {
     list.innerHTML = `<div class="info-msg">${i18n.selectFileFirst}</div>`;
     return;
@@ -460,12 +475,6 @@ export async function UpdateHistory() {
 
     // フィルタで null になった要素を除外して結合
     list.innerHTML = itemsHtml.filter((html) => html !== null).join("");
-
-    // --- 検索窓にイベントリスナーを登録 (初回のみ) ---
-    if (searchInput && !searchInput.dataset.listener) {
-      searchInput.addEventListener("input", () => UpdateHistory());
-      searchInput.dataset.listener = "true";
-    }
 
     // --- イベントリスナーの再追加 (既存コード) ---
     list.querySelectorAll(".gen-selector-badge").forEach((el) => {
