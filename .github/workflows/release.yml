@@ -43,8 +43,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: app-v__VERSION__ # 自動でバージョンをタグ付け
-          releaseName: "App v__VERSION__"
+          tagName: v__VERSION__ # 自動でバージョンをタグ付け
+          releaseName: "WorkBackupTool v__VERSION__"
           releaseBody: "See the assets below to download the latest version."
           releaseDraft: true
           prerelease: false
