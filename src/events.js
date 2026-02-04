@@ -13,6 +13,7 @@ import {
   getActiveTab,
   addToRecentFiles,
   saveCurrentSession,
+  recentFiles,
 } from "./state";
 
 import {
@@ -21,6 +22,7 @@ import {
   UpdateHistory,
   toggleProgress,
   showFloatingMessage,
+  renderRecentFiles,
 } from "./ui";
 
 import { addTab, OnExecute } from "./actions";
@@ -30,6 +32,8 @@ import {
   requestPermission,
   sendNotification,
 } from "@tauri-apps/plugin-notification";
+
+import { showMemoDialog } from "./memo.js";
 
 // --- ドラッグアンドドロップの基本防止設定 ---
 const preventDefault = (e) => {
@@ -87,14 +91,78 @@ export function setupGlobalEvents() {
       return;
     }
 
-    const noteBtn = e.target.closest(".note-btn");
-    if (noteBtn) {
-      const path = noteBtn.getAttribute("data-path");
-      const cur = await ReadTextFile(path + ".note").catch(() => "");
-      const val = prompt("Memo:", cur);
-      if (val !== null) {
-        await WriteTextFile(path + ".note", val);
+    // events.js 内の window.addEventListener("click", ...) の中
+
+    // 1. 世代バッジ (.gen-selector-badge) のクリック
+    const genBadge = e.target.closest(".gen-selector-badge");
+    if (genBadge) {
+      e.preventDefault();
+      e.stopPropagation();
+      tab.selectedTargetDir = genBadge.getAttribute("data-dir");
+      saveCurrentSession();
+      UpdateHistory();
+      return;
+    }
+
+    // 2. 履歴のメモボタン (.diff-item 内の .note-btn) のクリック
+    const historyNoteBtn = e.target.closest(".diff-item .note-btn");
+    if (historyNoteBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const path = historyNoteBtn.getAttribute("data-path");
+      const notePath = path + ".note";
+
+      // 既存の ReadTextFile を使用
+      const currentNote = await ReadTextFile(notePath).catch(() => "");
+      showMemoDialog(currentNote, async (newText) => {
+        try {
+          await WriteTextFile(notePath, newText);
+          showFloatingMessage(i18n.memoSaved);
+          UpdateHistory();
+        } catch (err) {
+          console.error(err);
+          showFloatingError(i18n.memoSaveError);
+        }
+      });
+      return;
+    }
+    // 最近使ったファイル (.recent-item) のクリック
+    const recentItem = e.target.closest(".recent-item");
+    if (recentItem) {
+      e.preventDefault();
+      const path = recentItem.getAttribute("data-path");
+      try {
+        // ファイル情報を更新
+        tab.workFile = path;
+        tab.workFileSize = await GetFileSize(path);
+        tab.backupDir = "";
+        tab.selectedTargetDir = "";
+
+        // 状態更新と保存
+        addToRecentFiles(path);
+        saveCurrentSession();
+
+        // UIの再描画
+        renderRecentFiles();
+        renderTabs();
+        UpdateDisplay();
         UpdateHistory();
+
+        showFloatingMessage(i18n.updatedWorkFile);
+
+        // ポップアップを閉じる処理（もしUIにあるなら）
+        const popup = document.querySelector(".recent-files-section");
+        if (popup) {
+          popup.style.display = "none";
+          setTimeout(() => popup.style.removeProperty("display"), 500);
+        }
+      } catch (err) {
+        console.error("Failed to load recent file:", err);
+        // ファイルが存在しない場合はリストから削除するなどの処理
+        const idx = recentFiles.indexOf(path);
+        if (idx > -1) recentFiles.splice(idx, 1);
+        localStorage.setItem("recentFiles", JSON.stringify(recentFiles));
+        renderRecentFiles();
       }
       return;
     }
@@ -182,8 +250,28 @@ export function setupGlobalEvents() {
       );
       if (radio) {
         radio.checked = true;
-        const tab = getActiveTab();
         if (tab) tab.backupMode = value;
+      }
+    }
+  });
+  window.addEventListener("contextmenu", (e) => {
+    // 最近使った項目 (.recent-item) の上での右クリックか判定
+    const recentItem = e.target.closest(".recent-item");
+    if (recentItem) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const path = recentItem.getAttribute("data-path");
+      const idx = recentFiles.indexOf(path);
+
+      if (idx > -1) {
+        // リストから削除して保存
+        recentFiles.splice(idx, 1);
+        localStorage.setItem("recentFiles", JSON.stringify(recentFiles));
+
+        // 再描画
+        renderRecentFiles();
+        saveCurrentSession();
       }
     }
   });

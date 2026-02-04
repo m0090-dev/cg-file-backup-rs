@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "WorkBackupTool",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "identifier": "com.m0090.dev.wbt",
   "build": {
     "frontendDist": "../dist",

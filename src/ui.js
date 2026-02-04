@@ -72,48 +72,6 @@ export function renderRecentFiles() {
       return `<div class="recent-item" title="${path}" data-path="${path}"><i></i> ${fileName}</div>`;
     })
     .join("");
-
-  list.querySelectorAll(".recent-item").forEach((el) => {
-    el.onclick = async (e) => {
-      e.stopPropagation();
-      const path = el.getAttribute("data-path");
-      const tab = getActiveTab();
-      try {
-        tab.workFileSize = await GetFileSize(path);
-        tab.workFile = path;
-        tab.backupDir = "";
-        tab.selectedTargetDir = "";
-        addToRecentFiles(path);
-        renderRecentFiles(); // state側で呼べないためここで実行
-        renderTabs();
-        UpdateDisplay();
-        UpdateHistory();
-        saveCurrentSession();
-        showFloatingMessage(i18n.updatedWorkFile);
-        const popup = document.querySelector(".recent-files-section");
-        if (popup) {
-          popup.style.display = "none";
-          setTimeout(() => popup.style.removeProperty("display"), 500);
-        }
-      } catch (err) {
-        // recentFilesはstateの参照を直接操作
-        const idx = recentFiles.indexOf(path);
-        if (idx > -1) recentFiles.splice(idx, 1);
-        localStorage.setItem("recentFiles", JSON.stringify(recentFiles));
-        renderRecentFiles();
-      }
-    };
-    el.oncontextmenu = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const path = el.getAttribute("data-path");
-      const idx = recentFiles.indexOf(path);
-      if (idx > -1) recentFiles.splice(idx, 1);
-      localStorage.setItem("recentFiles", JSON.stringify(recentFiles));
-      renderRecentFiles();
-      saveCurrentSession();
-    };
-  });
 }
 
 //TODO: Drag and drop関係はtauri v2が修整されたら正常動作するはず
@@ -475,38 +433,6 @@ export async function UpdateHistory() {
 
     // フィルタで null になった要素を除外して結合
     list.innerHTML = itemsHtml.filter((html) => html !== null).join("");
-
-    // --- イベントリスナーの再追加 (既存コード) ---
-    list.querySelectorAll(".gen-selector-badge").forEach((el) => {
-      el.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        tab.selectedTargetDir = el.getAttribute("data-dir");
-        saveCurrentSession();
-        UpdateHistory();
-      });
-    });
-
-    list.querySelectorAll(".note-btn").forEach((btn) => {
-      btn.onclick = async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const path = btn.getAttribute("data-path");
-        const notePath = path + ".note";
-        const currentNote = await ReadTextFile(notePath).catch(() => "");
-
-        showMemoDialog(currentNote, async (newText) => {
-          try {
-            await WriteTextFile(notePath, newText);
-            showFloatingMessage(i18n.memoSaved);
-            UpdateHistory();
-          } catch (err) {
-            console.error(err);
-            showFloatingError(i18n.memoSaveError);
-          }
-        });
-      };
-    });
 
     setupHistoryPopups();
   } catch (err) {
