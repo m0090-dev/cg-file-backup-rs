@@ -4,10 +4,11 @@ setlocal enabledelayedexpansion
 :: --- デフォルト設定 ---
 set BRANCH=main
 set MESSAGE=chore: update version and push
+set SKIP_CI=false
 
 :: --- 引数の解析 ---
 :parse_args
-if "%~1"=="" goto run_scripts
+if "%~1"=="" goto finalize_message
 if /i "%~1"=="--branch" (
     set BRANCH=%~2
     shift
@@ -20,8 +21,19 @@ if /i "%~1"=="--message" (
     shift
     goto parse_args
 )
+if /i "%~1"=="--skip-ci" (
+    set SKIP_CI=true
+    shift
+    goto parse_args
+)
 shift
 goto parse_args
+
+:finalize_message
+:: skip-ciフラグが立っている場合、メッセージの末尾に付け加える
+if "%SKIP_CI%"=="true" (
+    set MESSAGE=%MESSAGE% [skip ci]
+)
 
 :run_scripts
 echo [1/4] Running version update script...
@@ -46,5 +58,9 @@ echo [4/4] Pushing to %BRANCH%...
 git push origin %BRANCH%
 
 echo.
-echo Done! Factory is now working on GitHub Actions.
+if "%SKIP_CI%"=="true" (
+    echo Done! (Actions was skipped as requested)
+) else (
+    echo Done! Factory is now working on GitHub Actions.
+)
 pause
