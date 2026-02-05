@@ -280,6 +280,37 @@ pub fn apply_compact_mode(window: &WebviewWindow, is_compact: bool) -> tauri::Re
     Ok(())
 }
 
+pub fn apply_tray_popup_mode(window: &WebviewWindow, is_tray_mode: bool) -> tauri::Result<()> {
+    // 制約解除
+    window.set_resizable(true)?;
+    window.set_min_size(None::<Size>)?;
+    window.set_max_size(None::<Size>)?;
+
+    if is_tray_mode {
+        // --- トレイポップアップ用 ---
+        window.set_decorations(false)?; // 枠なし
+        window.set_always_on_top(true)?; // 最前面
+        window.set_skip_taskbar(true)?; // タスクバーに出さない
+
+        let size = Size::Logical(LogicalSize::new(300.0, 210.0));
+        window.set_size(size)?;
+        window.set_min_size(Some(size))?;
+        window.set_max_size(Some(size))?;
+    } else {
+        // --- 通常モード（復帰）用 ---
+        window.set_decorations(true)?; // 枠あり
+        window.set_always_on_top(false)?;
+        window.set_skip_taskbar(false)?;
+
+        let size = Size::Logical(LogicalSize::new(640.0, 450.0));
+        window.set_size(size)?;
+        window.set_min_size(Some(size))?;
+        window.set_max_size(Some(size))?;
+        window.center()?; // 中央に戻す
+    }
+    Ok(())
+}
+
 pub fn apply_window_visibility(app: AppHandle, show: bool) -> Result<(), String> {
     if let Some(window) = app.get_webview_window("main") {
         if show {

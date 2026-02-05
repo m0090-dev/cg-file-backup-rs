@@ -20,6 +20,27 @@ use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut,
 use tauri::menu::MenuEvent;
 
 #[cfg(desktop)]
+pub fn handle_window_event(window: &tauri::WebviewWindow, event: &tauri::WindowEvent) {
+    match event {
+        tauri::WindowEvent::Focused(false) => {
+            let app_handle = window.app_handle();
+            let state = app_handle.state::<AppState>();
+
+            // ロックを最小限のスコープで取得
+            let is_tray_mode = {
+                let cfg = state.config.lock().unwrap();
+                cfg.tray_mode
+            };
+
+            if is_tray_mode {
+                let _ = window.hide();
+            }
+        }
+        _ => {}
+    }
+}
+
+#[cfg(desktop)]
 use crate::utils::create_tray_menu;
 
 #[cfg(desktop)]
@@ -85,12 +106,16 @@ pub fn handle_menu_event(app: &tauri::AppHandle, event: MenuEvent) {
             let config = {
                 let mut cfg = state.config.lock().unwrap();
                 cfg.tray_mode = false;
+                cfg.compact_mode = false;
                 cfg.clone()
             };
             let _ = state.save();
 
             let _ = utils::apply_window_visibility(app.clone(), true);
+            let _ = app.emit("compact-mode-event", false);
+
             if let Some(window) = app.get_webview_window("main") {
+                let _ = utils::apply_tray_popup_mode(&window, false);
                 let _ = window.unminimize();
                 let _ = window.show();
                 let _ = window.set_focus();
@@ -240,6 +265,7 @@ pub fn handle_menu_event(app: &tauri::AppHandle, event: MenuEvent) {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_positioner::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
@@ -312,6 +338,11 @@ pub fn run() {
 
                 app.on_menu_event(move |app_handle, event| {
                     handle_menu_event(app_handle, event);
+                });
+                let window_for_event = window.clone();
+
+                window.on_window_event(move |event| {
+                    handle_window_event(&window_for_event, event);
                 });
 
                 // 1. ショートカットの定義

@@ -242,6 +242,16 @@ export function renderTabs() {
 export function UpdateDisplay() {
   const tab = getActiveTab();
   if (!i18n || !tab) return;
+  const tabSelect = document.getElementById("compact-tab-select");
+  if (tabSelect) {
+    tabSelect.innerHTML = tabs.map(t => {
+      const fileName = t.workFile ? t.workFile.split(/[\\/]/).pop() : "No File";
+      return `<option value="${t.id}" ${t.active ? "selected" : ""}>${fileName}</option>`;
+    }).join("");
+    tabSelect.value = tab.id;		
+  }  
+
+  
   const fileEl = document.getElementById("selected-workfile");
   const dirEl = document.getElementById("selected-backupdir");
   if (fileEl)
@@ -251,21 +261,6 @@ export function UpdateDisplay() {
         : i18n.selectedWorkFile) +
       (tab.workFile ? ` [${formatSize(tab.workFileSize)}]` : "");
   if (dirEl) dirEl.textContent = tab.backupDir || i18n.selectedBackupDir;
-
-  const isCompact = document.body.classList.contains("compact-mode");
-
-  // -- tab.backupMode が保存されていたら、UI（ラジオボタン/セレクトボックス）に反映させる --
-  if (tab.backupMode) {
-    if (isCompact) {
-      const cSel = document.getElementById("compact-mode-select");
-      if (cSel) cSel.value = tab.backupMode;
-    } else {
-      const radio = document.querySelector(
-        `input[name="backupMode"][value="${tab.backupMode}"]`,
-      );
-      if (radio) radio.checked = true;
-    }
-  }
 
   // --- 各要素の同期 ---
   const normalComp = document.getElementById("hdiff-compress");

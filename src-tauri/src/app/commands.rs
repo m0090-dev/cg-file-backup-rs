@@ -291,7 +291,11 @@ pub async fn backup_or_diff(
                 fs::remove_file(&temp_diff)
                     .map_err(|e| format!("Failed to remove temp file: {}", e))?;
             } else {
-                return Err(format!("Failed to finalize diff (OS error {}): {}", e.raw_os_error().unwrap_or(0), e));
+                return Err(format!(
+                    "Failed to finalize diff (OS error {}): {}",
+                    e.raw_os_error().unwrap_or(0),
+                    e
+                ));
             }
         }
 

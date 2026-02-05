@@ -25,7 +25,7 @@ import {
   renderRecentFiles,
 } from "./ui";
 
-import { addTab, OnExecute } from "./actions";
+import { addTab, OnExecute,switchTab } from "./actions";
 import { ask } from "@tauri-apps/plugin-dialog";
 import {
   isPermissionGranted,
@@ -214,6 +214,10 @@ export function setupGlobalEvents() {
     const name = e.target.name;
     const value = e.target.value;
     const tab = getActiveTab();
+    if (id === "compact-tab-select") {
+      switchTab(value);
+      return;
+    }
     if (name == "diff-algo") {
       if (tab) tab.diffAlgo = value;
     }
