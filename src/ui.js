@@ -262,6 +262,13 @@ export function UpdateDisplay() {
       (tab.workFile ? ` [${formatSize(tab.workFileSize)}]` : "");
   if (dirEl) dirEl.textContent = tab.backupDir || i18n.selectedBackupDir;
 
+
+  const radio = document.querySelector(`input[name="backupMode"][value="${tab.backupMode}"]`);
+  if (radio) radio.checked = true;
+  const compactModeSel = document.getElementById("compact-mode-select");
+  if (compactModeSel) compactModeSel.value = tab.backupMode;
+  
+
   // --- 各要素の同期 ---
   const normalComp = document.getElementById("hdiff-compress");
   const compactComp = document.getElementById("compact-hdiff-compress");
