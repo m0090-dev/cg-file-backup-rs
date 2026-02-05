@@ -25,7 +25,7 @@ import {
 
 // --- タブ操作ロジック ---
 export function switchTab(id) {
-  tabs.forEach((t) => (t.active = t.id === id));
+  tabs.forEach((t) => (t.active = t.id == id));
   // DEBUG
   const activeTab = tabs.find(t => t.active);
   console.log("DEBUG JS Switched to:", activeTab ? activeTab.id : "NONE", activeTab?.workFile);

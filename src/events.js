@@ -215,7 +215,7 @@ export function setupGlobalEvents() {
     const value = e.target.value;
     const tab = getActiveTab();
     if (id === "compact-tab-select") {
-      switchTab(value);
+      switchTab(Number(value));
       return;
     }
     if (name == "diff-algo") {
