@@ -526,3 +526,10 @@ export function toggleProgress(show, text = "") {
     }, 500);
   }
 }
+
+export function UpdateAllUI() {
+  renderRecentFiles();
+  renderTabs();
+  UpdateDisplay();
+  UpdateHistory();
+}

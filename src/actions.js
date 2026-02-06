@@ -21,6 +21,7 @@ import {
   UpdateHistory,
   toggleProgress,
   showFloatingMessage,
+  UpdateAllUI
 } from "./ui";
 
 // --- タブ操作ロジック ---
@@ -29,10 +30,7 @@ export function switchTab(id) {
   // DEBUG
   const activeTab = tabs.find(t => t.active);
   console.log("DEBUG JS Switched to:", activeTab ? activeTab.id : "NONE", activeTab?.workFile);
-
-  renderTabs();
-  UpdateDisplay();
-  UpdateHistory();
+  UpdateAllUI();
   saveCurrentSession();
 }
 
@@ -47,9 +45,7 @@ export function addTab() {
     backupMode: "diff",
     compressMode: "zstd",
   });
-  renderTabs();
-  UpdateDisplay();
-  UpdateHistory();
+  UpdateAllUI();
   saveCurrentSession();
 }
 
@@ -58,9 +54,7 @@ export function removeTab(id) {
   const wasActive = tabs[index].active;
   tabs.splice(index, 1);
   if (wasActive) tabs[Math.max(0, index - 1)].active = true;
-  renderTabs();
-  UpdateDisplay();
-  UpdateHistory();
+  UpdateAllUI();
   saveCurrentSession();
 }
 
@@ -83,11 +77,7 @@ export function reorderTabs(draggedId, targetId) {
     // 2. セッションを強制保存（ここで localStorage などに書き込まれる）
     saveCurrentSession();
 
-    // 3. 画面全体を再描画
-    renderTabs();
-
-    // 4. アクティブなタブの内容も念のため更新
-    UpdateDisplay();
+    UpdateAllUI();
   }
 }
 
@@ -97,7 +87,8 @@ export async function OnExecute() {
     alert(i18n.selectFileFirst);
     return;
   }
-  UpdateDisplay();
+  
+  UpdateAllUI();
   const mode = tab.backupMode;
   // --- 2. 差分設定の取得 (既存ロジック維持 + 圧縮設定追加) ---
   let algo = tab.diffAlgo || "hdiff";
@@ -154,7 +145,7 @@ export async function OnExecute() {
 
     toggleProgress(false);
     showFloatingMessage(successText);
-    UpdateHistory(); // 履歴の更新
+    UpdateAllUI();
     return successText;
   } catch (err) {
     toggleProgress(false);
@@ -177,7 +168,7 @@ export async function applySelectedBackups() {
       }
       toggleProgress(false);
       showFloatingMessage(i18n.diffApplySuccess);
-      UpdateHistory();
+      UpdateAllUI();
     } catch (err) {
       toggleProgress(false);
       alert(err);

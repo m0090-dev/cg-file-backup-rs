@@ -17,6 +17,7 @@ import {
   UpdateHistory,
   showFloatingMessage,
   showFloatingError,
+  UpdateAllUI
 } from "./ui";
 
 import { setupGlobalEvents } from "./events";
@@ -143,14 +144,9 @@ async function Initialize() {
   if (tabs.length > 0 && !tabs.some(t => t.active)) {
       switchTab(tabs[0].id);
   } else {
-  renderTabs();
-
-  renderRecentFiles();
-
-  UpdateDisplay();
-
-  UpdateHistory();
-	}
+  
+  UpdateAllUI();
+}
 }
 
 // --- ドラッグアンドドロップ設定 ---
@@ -230,11 +226,7 @@ function setupDragAndDrop() {
 
         showFloatingMessage(msg);
 
-        renderTabs();
-
-        UpdateDisplay();
-
-        UpdateHistory();
+        UpdateAllUI();
 
         saveCurrentSession();
       }
